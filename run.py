@@ -195,41 +195,69 @@ def _extract_document_text() -> str:
 
 
 def _print_report(report) -> None:
-    """Pretty-print the final ReportSection to stdout."""
+    """Pretty-print the final 12-section ReportSection to stdout."""
     if report is None:
         print("\n[error] No compliance report was produced.")
         return
 
     print("\n" + "═" * 70)
-    print("  PRISM COMPLIANCE REPORT")
+    print("  PRISM COMPLIANCE REPORT  (12 sections)")
     print("═" * 70)
 
     # ── Section 1: narrative summary ──────────────────────────────────────
-    print(f"\n── Use Case Summary ──")
+    print("\n§1  USE CASE SUMMARY")
+    print("─" * 50)
     print(report.use_case_summary or "(not available)")
 
-    # ── Sections 2–10 ────────────────────────────────────────────────────
-    sections = [
-        ("Extracted Facts",              "extracted_facts"),
-        ("AI System Definition",         "ai_definition_check"),
-        ("Risk Classification",          "risk_classification"),
-        ("Prohibited Practices",         "prohibited_practices_check"),
-        ("Transparency & GPAI",          "transparency_gpai_obligations"),
-        ("Roles",                        "roles"),
-        ("Governance Observations",      "governance_observations"),
-        ("Missing Information / Gaps",   "missing_information"),
-        ("Citations by Source",          "citations_by_source"),
+    # ── Sections 2–10: structured dict sections ───────────────────────────
+    dict_sections = [
+        ("§2  EXTRACTED FACTS",                 "extracted_facts"),
+        ("§3  AI SYSTEM DETERMINATION",          "ai_definition_check"),
+        ("§4  RISK CLASSIFICATION",              "risk_classification"),
+        ("§5  PROHIBITED-PRACTICE CHECK",        "prohibited_practices_check"),
+        ("§6  TRANSPARENCY & LABELING",          "transparency_gpai_obligations"),
+        ("§7  PROVIDER / DEPLOYER ROLES",        "roles"),
+        ("§8  GOVERNANCE RECOMMENDATIONS",       "governance_observations"),
+        ("§9  MISSING INFORMATION / GAPS",       "missing_information"),
+        ("§10 CONFIDENCE SCORE",                 "confidence_score"),
+        ("    CITATIONS BY SOURCE",              "citations_by_source"),
     ]
 
-    for label, attr in sections:
+    for label, attr in dict_sections:
         value = getattr(report, attr, None)
-        print(f"\n── {label} ──")
+        print(f"\n{label}")
+        print("─" * 50)
         if isinstance(value, dict) and value:
             print(json.dumps(value, indent=2, ensure_ascii=False))
-        elif isinstance(value, str) and value:
-            print(value)
         else:
             print("(not available)")
+
+    # ── Section 11: evidence separation (by epistemological label) ────────
+    print("\n§11 EVIDENCE SEPARATION")
+    print("─" * 50)
+    ev = getattr(report, "evidence_separation", None)
+    if ev:
+        for label_key in ("RETRIEVED", "FACT", "ASSUMPTION", "UNCERTAIN"):
+            claims = ev.get(label_key, [])
+            print(f"  {label_key}: {len(claims)} claim(s)")
+        print()
+        print(json.dumps(ev, indent=2, ensure_ascii=False))
+    else:
+        print("(not available)")
+
+    # ── Section 12: agent trace ───────────────────────────────────────────
+    print("\n§12 AGENT TRACE")
+    print("─" * 50)
+    trace = getattr(report, "agent_trace", None)
+    if trace:
+        for stage in trace:
+            status_icon = "✓" if stage.get("status") == "completed" else "⟳"
+            print(f"  [{status_icon}] Stage {stage.get('stage')}: {stage.get('agent')}")
+            print(f"      {stage.get('description', '')}")
+        print()
+        print(json.dumps(trace, indent=2, ensure_ascii=False))
+    else:
+        print("(not available)")
 
     print("\n" + "═" * 70)
 

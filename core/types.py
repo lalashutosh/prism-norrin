@@ -228,32 +228,44 @@ class ValidationSection:
 
 @dataclass
 class ReportSection:
-    """Ten-section compliance report produced by the synthesis agent.
+    """Twelve-section compliance report produced by the synthesis agent.
 
     Each section is a structured dict (keys defined by the synthesis agent)
     rather than a flat string so that the UI layer can render sections
     independently.
+
+    Sections 1–10 are produced by the synthesis LLM call.
+    Sections 11–12 are built programmatically from pipeline execution state
+    so they faithfully reflect what actually happened — no LLM hallucination.
     """
     # Section 1
-    use_case_summary:            str  = ""
+    use_case_summary:              str  = ""
     # Section 2
-    extracted_facts:             dict = field(default_factory=dict)
+    extracted_facts:               dict = field(default_factory=dict)
     # Section 3
-    ai_definition_check:         dict = field(default_factory=dict)
+    ai_definition_check:           dict = field(default_factory=dict)
     # Section 4
-    risk_classification:         dict = field(default_factory=dict)
+    risk_classification:           dict = field(default_factory=dict)
     # Section 5
-    prohibited_practices_check:  dict = field(default_factory=dict)
+    prohibited_practices_check:    dict = field(default_factory=dict)
     # Section 6
     transparency_gpai_obligations: dict = field(default_factory=dict)
     # Section 7
-    roles:                       dict = field(default_factory=dict)
+    roles:                         dict = field(default_factory=dict)
     # Section 8
-    governance_observations:     dict = field(default_factory=dict)
+    governance_observations:       dict = field(default_factory=dict)
     # Section 9
-    missing_information:         dict = field(default_factory=dict)
-    # Section 10
-    citations_by_source:         dict = field(default_factory=dict)
+    missing_information:           dict = field(default_factory=dict)
+    # Section 10: per-dimension + overall confidence with narrative explanation
+    confidence_score:              dict = field(default_factory=dict)
+    # Section 11: all claims grouped by epistemological label (FACT / RETRIEVED /
+    #             ASSUMPTION / UNCERTAIN) — built programmatically from merged analysis
+    evidence_separation:           dict = field(default_factory=dict)
+    # Section 12: ordered list of pipeline stage dicts showing which agent ran,
+    #             what it received, and what it produced — built programmatically
+    agent_trace:                   list = field(default_factory=list)
+    # Internal: citations grouped by source_type; referenced within sections 3–8.
+    citations_by_source:           dict = field(default_factory=dict)
 
 
 @dataclass
