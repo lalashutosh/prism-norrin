@@ -323,15 +323,42 @@ class Orchestrator:
             # Register every legal chunk_id as "retrieved" so the citation
             # sanitiser in the memory proxy accepts them as valid citations.
             total_mappings = 0
+            aug_legal: list[Chunk] = []
+            seen_legal: set[str] = set()
             for dim, mappings in augmented.mappings_by_dimension.items():
                 for m in mappings:
                     if m.legal_chunk_id:
                         self._state.retrieved_chunk_ids.add(m.legal_chunk_id)
+                        # Collect unique legal chunks for the retrieval cache (below).
+                        if m.legal_chunk_id not in seen_legal:
+                            seen_legal.add(m.legal_chunk_id)
+                            aug_legal.append(Chunk(
+                                chunk_id=m.legal_chunk_id,
+                                text=m.legal_text,
+                                source_type=m.source_type,
+                                article_id=m.article_id or None,
+                                metadata={},
+                            ))
                 total_mappings += len(mappings)
 
             # Also register user-doc chunk_ids so agents can cite FACT claims.
             for c in user_chunks:
                 self._state.retrieved_chunk_ids.add(c.chunk_id)
+
+            # ── Populate the retrieval cache with augmented chunks ────────────
+            # run_augmentation() calls retrieve_fn() directly, bypassing
+            # _retrieve_and_cache().  This means _get_all_chunks() — which only
+            # returns chunks that went through the cache — does NOT contain the
+            # targeted legislation chunks fetched per dimension.  Without them
+            # the cache is dominated by Article 5 official_guidance from the
+            # broad initial query, so the validation agent's legacy chunk-
+            # selection path returns the wrong source for every non-prohibited
+            # dimension.  Storing the augmented chunks under dedicated keys
+            # makes them available to _get_all_chunks() as a correct fallback.
+            if aug_legal:
+                self._state.retrieval_cache["__augmentation_legal__"] = aug_legal
+            if user_chunks:
+                self._state.retrieval_cache["__augmentation_user__"] = list(user_chunks)
 
             self._log_pipeline(
                 "AGENT_COMPLETED", agent="augmentation",
@@ -591,6 +618,12 @@ class Orchestrator:
         self._memory.final_report         = copy.deepcopy(snapshot.final_report)
         self._memory.follow_up_questions  = copy.deepcopy(snapshot.follow_up_questions)
         self._memory.confidence_summary   = copy.deepcopy(snapshot.confidence_summary)
+        # augmented_context is set once during the augmentation phase (before
+        # analysis) and never changes during analysis/validation/synthesis.
+        # Restoring it explicitly here is a safety net: it ensures the correct
+        # pre-mapped context is always available after a loop rollback, even if
+        # a future refactor modifies when augmented_context is written.
+        self._memory.augmented_context    = copy.deepcopy(snapshot.augmented_context)
         logger.debug("Checkpoint '%s' restored.", name)
         self._log_pipeline("CHECKPOINT_RESTORED", metadata={"checkpoint": name})
 
