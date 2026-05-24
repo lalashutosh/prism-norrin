@@ -19,15 +19,30 @@ INTELLIGENCE — pure functions, no I/O, fully testable without API calls
 ORCHESTRATION — coordinates calls, manages state, emits signals
 ══════════════════════════════════════════════════════════════════════════════
   _call_llm(prompt, system, client) -> str
+  _validate_claim_worker(wc, facts, chunks, aug_ctx, llm_client)
+      -> (claim_id, ClaimStatus, str, list[str], Confidence, Label)
   _get_analysis_sections(memory) -> dict[str, DimensionFinding]
   _get_chunks_for_claim(weak_claim, all_chunks) -> list[Chunk]
   run_validation_agent(memory, chunks, context, llm_client) -> Signal
+
+PARALLEL EXECUTION
+══════════════════
+When the augmented context is available (the normal production path), EVERY
+weak claim has pre-fetched authoritative chunks — so all claims can be
+validated in parallel with a ThreadPoolExecutor.  The sequential retry path
+(RetrievalSignal) is only needed on the legacy path when the general chunk
+pool genuinely lacks authoritative coverage for a claim.
+
+SQLite thread safety: the _write_lock in LogStore serialises concurrent writes
+from worker threads (same as analysis_agent.py parallel path).
 """
 
 from __future__ import annotations
 
 import json
+import logging
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Optional, Union
 
 from core.types import (
@@ -60,6 +75,13 @@ from agents.analysis_agent import (
     _serialise_chunks,
     DIMENSION_KEYWORDS,
 )
+
+_logger = logging.getLogger(__name__)
+
+# Maximum concurrent LLM calls for weak-claim validation.
+# Each call is a short prompt (~1500 tokens) → short response (~300 tokens).
+# 8 workers keeps GPU utilisation high without overwhelming a single-card server.
+_VALIDATION_WORKERS = 8
 
 # Critical dimensions where an ASSUMPTION label is always considered weak.
 CRITICAL_DIMENSIONS = frozenset({
@@ -266,6 +288,31 @@ def _call_llm(prompt: str, system: str, client: Any) -> str:
     return response.content[0].text
 
 
+def _validate_claim_worker(
+    wc: WeakClaim,
+    facts: FactSection,
+    chunks: list[Chunk],
+    aug_ctx: Optional[AugmentedContext],
+    llm_client: Any,
+) -> tuple[str, ClaimStatus, str, list[str], Confidence, Label]:
+    """Pure thread-safe worker: build prompt → call LLM → parse response.
+
+    Returns (claim_id, status, finding, new_chunk_ids, new_conf, new_label).
+    Called from ThreadPoolExecutor workers; never touches mutable shared state.
+    The log_reasoning decorator fires inside the worker thread — ContextVars
+    are inherited from the parent thread in Python 3.7+ so the session_id and
+    logger context are available, and LogStore._write_lock prevents data races.
+    """
+    relevant = _get_chunks_for_claim(wc, chunks, aug_ctx=aug_ctx)
+    prompt   = build_claim_validation_prompt(wc, facts, relevant)
+    _logged_llm = log_reasoning(agent="validation", dimension=wc.dimension_id)(_call_llm)
+    response_text = _logged_llm(prompt, VALIDATION_SYSTEM_PROMPT, llm_client)
+    status, finding, new_chunk_ids, new_conf, new_label = (
+        parse_claim_validation_response(response_text, wc)
+    )
+    return wc.claim_id, status, finding, new_chunk_ids, new_conf, new_label
+
+
 def _get_analysis_sections(
     memory: ValidationAgentMemoryView,
 ) -> dict[str, Optional[DimensionFinding]]:
@@ -374,70 +421,106 @@ def run_validation_agent(
     flags:             list[ValidationFlag]   = context.setdefault("flags", [])
     unresolved_ids:    list[str]              = context.setdefault("unresolved_ids", [])
 
-    for wc in all_weak:
-        cid = wc.claim_id
-        if cid in processed_ids:
-            continue  # already handled in a prior invocation
+    # ── Classify unprocessed claims into two buckets ─────────────────────────
+    # Parallel bucket  : claim has authoritative chunks right now → can validate
+    # Retrieval bucket : no authoritative chunks → needs RetrievalSignal retry
+    parallel_bucket:   list[WeakClaim] = []
+    retrieval_bucket:  list[WeakClaim] = []
 
-        # Check evidence availability for this claim.
-        # When augmented context is available _get_chunks_for_claim returns
-        # dimension-specific legal chunks that are *always* authoritative,
-        # so the RetrievalSignal below fires only on the legacy path when
-        # the general chunk pool genuinely lacks authoritative coverage.
+    for wc in all_weak:
+        if wc.claim_id in processed_ids:
+            continue
         relevant = _get_chunks_for_claim(wc, chunks, aug_ctx=aug_ctx)
-        has_authoritative = any(
+        has_auth = any(
             c.source_type in ("legislation", "official_guidance") for c in relevant
         )
+        if has_auth or wc.claim_id in max_reached:
+            parallel_bucket.append(wc)
+        else:
+            retrieval_bucket.append(wc)
 
-        if not has_authoritative and cid not in max_reached:
-            retries = retry_counts.get(cid, 0)
-            if retries < 2:
-                # Signal upward — do not assess this claim yet.
-                query = (
-                    f"{wc.dimension_id} {wc.claim_text[:120]} "
-                    f"EU AI Act evidence"
-                )
-                return RetrievalSignal(
-                    query=query,
-                    filters={
-                        "dimension":    wc.dimension_id,
-                        "source_types": ["legislation", "official_guidance"],
-                    },
-                    dimension=cid,  # use claim_id as dimension per spec
-                )
-            # Retry limit hit for this claim.
-            max_reached.add(cid)
-
-        # Assess this claim with whatever chunks we have.
-        prompt = build_claim_validation_prompt(wc, facts, relevant)
-        # Wrap per-claim so each LLM call is logged with the claim's dimension.
-        # dimension=wc.dimension_id (not claim_id) so the reasoning trace is
-        # queryable by the same dimension keys used by the analysis entries.
-        _logged_llm = log_reasoning(agent="validation", dimension=wc.dimension_id)(_call_llm)
-        response_text = _logged_llm(prompt, VALIDATION_SYSTEM_PROMPT, llm_client)
-        status, finding, new_chunk_ids, new_conf, new_label = (
-            parse_claim_validation_response(response_text, wc)
-        )
-
-        # Record outcome.
-        if status == ClaimStatus.OVERTURNED:
-            overturned_claims.append(
-                build_overturned_claim(wc, finding, new_conf, new_label, new_chunk_ids)
+    # ── Handle retrieval-needed claims first (sequential, may return early) ──
+    # This preserves the original RetrievalSignal contract: if a claim still
+    # has no authoritative evidence and hasn't exhausted retries, we stop and
+    # ask the orchestrator to fetch more chunks before continuing.
+    for wc in retrieval_bucket:
+        cid = wc.claim_id
+        retries = retry_counts.get(cid, 0)
+        if retries < 2:
+            return RetrievalSignal(
+                query=(
+                    f"{wc.dimension_id} {wc.claim_text[:120]} EU AI Act evidence"
+                ),
+                filters={
+                    "dimension":    wc.dimension_id,
+                    "source_types": ["legislation", "official_guidance"],
+                },
+                dimension=cid,
             )
-        elif status == ClaimStatus.UNRESOLVED:
-            unresolved_ids.append(cid)
+        # Retry limit exhausted — move to parallel bucket so it still gets assessed
+        # with whatever chunks exist (may result in UNRESOLVED, which is correct).
+        max_reached.add(cid)
+        parallel_bucket.append(wc)
 
-        flags.append(
-            ValidationFlag(
-                claim_id=cid,
-                dimension_id=wc.dimension_id,
-                status=status,
-                notes=finding,
-                new_chunk_ids=new_chunk_ids,
+    # ── Validate all ready claims in parallel ─────────────────────────────────
+    # Workers are pure: (prompt → LLM → parse → return tuple).
+    # All state mutations happen in the main thread after the pool joins.
+    # The ThreadPoolExecutor is only created when there are claims to process
+    # so the overhead is zero when the agent is called on an already-clean state.
+    if parallel_bucket:
+        n_workers = min(len(parallel_bucket), _VALIDATION_WORKERS)
+        raw_results: dict[str, tuple] = {}   # claim_id → (status, finding, ...)
+
+        with ThreadPoolExecutor(max_workers=n_workers) as pool:
+            future_to_wc = {
+                pool.submit(
+                    _validate_claim_worker,
+                    wc, facts, chunks, aug_ctx, llm_client,
+                ): wc
+                for wc in parallel_bucket
+            }
+            for future in as_completed(future_to_wc):
+                wc = future_to_wc[future]
+                try:
+                    cid, status, finding, new_chunk_ids, new_conf, new_label = (
+                        future.result()
+                    )
+                except Exception as exc:
+                    _logger.warning(
+                        "validation worker failed for %s: %s", wc.claim_id, exc
+                    )
+                    cid, status, finding, new_chunk_ids, new_conf, new_label = (
+                        wc.claim_id,
+                        ClaimStatus.UNRESOLVED,
+                        f"Worker exception: {exc}",
+                        [],
+                        Confidence.INSUFFICIENT,
+                        Label.UNCERTAIN,
+                    )
+                raw_results[cid] = (status, finding, new_chunk_ids, new_conf, new_label)
+
+        # ── Record outcomes in deterministic order (all_weak preserves analysis order)
+        for wc in parallel_bucket:
+            cid = wc.claim_id
+            status, finding, new_chunk_ids, new_conf, new_label = raw_results[cid]
+
+            if status == ClaimStatus.OVERTURNED:
+                overturned_claims.append(
+                    build_overturned_claim(wc, finding, new_conf, new_label, new_chunk_ids)
+                )
+            elif status == ClaimStatus.UNRESOLVED:
+                unresolved_ids.append(cid)
+
+            flags.append(
+                ValidationFlag(
+                    claim_id=cid,
+                    dimension_id=wc.dimension_id,
+                    status=status,
+                    notes=finding,
+                    new_chunk_ids=new_chunk_ids,
+                )
             )
-        )
-        processed_ids.add(cid)
-        # Re-enter loop for the next unprocessed claim in this same invocation.
+            processed_ids.add(cid)
 
     # All weak claims processed — determine overall confidence and write.
     has_unresolved = bool(unresolved_ids)
