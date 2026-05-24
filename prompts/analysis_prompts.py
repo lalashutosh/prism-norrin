@@ -189,6 +189,26 @@ Determine what transparency and disclosure obligations apply:
   - GPAI models: Articles 52–56 (transparency, copyright, systemic risk)
   - General: any applicable labelling or disclosure requirements
 
+APPLICABILITY GUIDANCE — read before analysing
+───────────────────────────────────────────────
+• Article 13 applies ONLY to HIGH-RISK AI systems (Annex III / Article 6).
+  If the system is classified as minimal or limited risk, Article 13 does
+  NOT apply.  State this conclusion with HIGH confidence and cite the article.
+• Article 50(1) (notification) applies ONLY when the system directly and
+  visibly interacts with natural persons in real time.  B2B tools and
+  industrial equipment deployed without human-facing interfaces do NOT trigger
+  Article 50(1).  State this conclusion with HIGH confidence.
+• Articles 52–56 (GPAI) apply ONLY to foundation models / general-purpose
+  AI trained on broad data.  A domain-specific ML model trained on proprietary
+  sensor data is NOT a GPAI model.  State this conclusion with HIGH confidence.
+• If you can determine that ALL obligations above do not apply, produce a
+  claim for each one (stating "not applicable") with confidence HIGH and
+  label RETRIEVED (if the corpus provides direct text) or ASSUMPTION (if
+  you are inferring from the system description alone).
+• Avoid UNCERTAIN for clear non-applicability — "UNCERTAIN" should only be
+  used when the use-case description is genuinely ambiguous about a feature
+  that would trigger an obligation.
+
 USE CASE FACTS:
 {facts_text}
 

@@ -66,6 +66,15 @@ class LogStore:
         Enables WAL (Write-Ahead Logging) mode for better concurrent read
         performance — important because report export reads while the pipeline
         may still be writing.
+
+        Stale WAL recovery
+        ~~~~~~~~~~~~~~~~~~
+        If a previous run was interrupted mid-write it can leave behind
+        ``<db>.db-wal`` and ``<db>.db-shm`` lock files that cause
+        ``sqlite3.OperationalError: disk I/O error`` on the next open.
+        We detect that situation and delete the orphaned sidecar files
+        before retrying — safe because the lock files are owned by a process
+        that is no longer running.
         """
         if self._db_path != ":memory:":
             # Ensure the /logs directory exists before opening the file.
@@ -74,10 +83,32 @@ class LogStore:
         # check_same_thread=False allows the connection to be used from the
         # thread that will call close() (which may differ from the thread that
         # called initialize() in async contexts).
-        self._conn = sqlite3.connect(self._db_path, check_same_thread=False)
-        self._conn.row_factory = sqlite3.Row
-        self._conn.execute("PRAGMA journal_mode=WAL")
-        self._create_tables()
+        try:
+            self._conn = sqlite3.connect(self._db_path, check_same_thread=False)
+            self._conn.row_factory = sqlite3.Row
+            self._conn.execute("PRAGMA journal_mode=WAL")
+            self._create_tables()
+        except sqlite3.OperationalError as exc:
+            # Stale WAL/SHM files from an interrupted run can cause
+            # "disk I/O error".  Remove them and retry exactly once.
+            if self._db_path != ":memory:" and "disk I/O" in str(exc):
+                for suffix in (".db-wal", ".db-shm", "-wal", "-shm"):
+                    stale = Path(self._db_path + suffix)
+                    if stale.exists():
+                        stale.unlink()
+                if self._conn is not None:
+                    try:
+                        self._conn.close()
+                    except Exception:
+                        pass
+                    self._conn = None
+                # Retry after removing stale sidecar files.
+                self._conn = sqlite3.connect(self._db_path, check_same_thread=False)
+                self._conn.row_factory = sqlite3.Row
+                self._conn.execute("PRAGMA journal_mode=WAL")
+                self._create_tables()
+            else:
+                raise
 
     def _create_tables(self) -> None:
         """Create all four log tables using IF NOT EXISTS (idempotent)."""

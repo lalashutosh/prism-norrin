@@ -24,6 +24,7 @@ from functools import wraps
 from typing import Any, Optional
 
 from core.types import (
+    AugmentedContext,
     Chunk,
     Claim,
     Confidence,
@@ -230,6 +231,11 @@ class SessionMemory:
     follow_up_questions:  Optional[FollowUpSection]    = None
     confidence_summary:   Optional[ConfidenceSection]  = None
 
+    # Written by the orchestrator's augmentation phase (after extraction,
+    # before analysis).  Read-only for all agents — they receive a deep copy
+    # via their proxy view.  None until the augmentation phase completes.
+    augmented_context:    Optional[AugmentedContext]   = None
+
     # Private: orchestrator only — never surfaced through any proxy.
     # Holds the retrieval cache, named checkpoints, retry counters, and
     # the set of all chunk IDs that have been retrieved this session.
@@ -238,15 +244,46 @@ class SessionMemory:
                           )
 
 
-# ── Shared validation helpers ─────────────────────────────────────────────────
+# ── Write-gate helpers ────────────────────────────────────────────────────────
 #
-# These are pure functions called by every proxy write method.
-# They raise MemoryWriteError on the first failure found, giving the
-# orchestrator a precise check_name to log and act on.
+# MemoryWriteError is raised ONLY for type-level failures — values that
+# downstream code cannot process correctly regardless of what any agent
+# decides.  It is never raised for reasoning quality problems.
+#
+# Raises MemoryWriteError:
+#   _check_schema       wrong Python type in a slot
+#                       e.g. RiskSection where DefinitionSection expected →
+#                       every downstream .is_ai_system access crashes
+#
+#   _check_confidence   raw string instead of Confidence enum
+#   _check_label        raw string instead of Label enum
+#                       e.g. "HIGH" instead of Confidence.HIGH →
+#                       orchestrator loop condition silently always False
+#
+# Sanitises in-place (does NOT raise):
+#   _sanitise_citations        hallucinated/unretrieved chunk_ids → strip +
+#                              downgrade claim to ASSUMPTION/UNSUPPORTED so
+#                              the validation agent reviews it
+#
+#   _sanitise_label_consistency  corpus chunk labeled FACT, or uploaded_doc
+#                              chunk labeled RETRIEVED → correct the label
+#                              in-place.  This is a quality mislabel, not a
+#                              type failure — the pipeline can continue and
+#                              the validation + synthesis chain surfaces it.
+#
+# Raises MemoryWriteError (verified-evidence writes only):
+#   _check_citations    used in write_facts and write_overturned_claims where
+#                       chunk_ids are pipeline-assigned, not LLM-generated.
+#                       A non-retrieved ID there indicates a setup error.
 
 def _check_schema(value: Any, expected_type: type, field_name: str) -> None:
-    # Guard against passing the wrong dataclass type to a write method
-    # (e.g. a RiskSection where a DefinitionSection is expected).
+    """Raise MemoryWriteError if value is not the expected dataclass type.
+
+    Prevents passing the wrong section type to a write method
+    (e.g. a RiskSection where a DefinitionSection is expected).
+    This is a structural integrity check — the wrong type would cause
+    AttributeError or silent data corruption in every downstream agent.
+    """
     if not isinstance(value, expected_type):
         raise MemoryWriteError(
             "schema",
@@ -256,8 +293,12 @@ def _check_schema(value: Any, expected_type: type, field_name: str) -> None:
 
 
 def _check_confidence(conf: Any, field_name: str) -> None:
-    # Ensures every confidence value is a proper Confidence enum member,
-    # not a raw string like "HIGH" that would bypass enum semantics.
+    """Raise MemoryWriteError if conf is not a Confidence enum member.
+
+    A raw string like "HIGH" would bypass enum comparison semantics,
+    silently breaking the orchestrator's loop condition and quality
+    regression checks.
+    """
     if not isinstance(conf, Confidence):
         raise MemoryWriteError(
             "confidence_bounds",
@@ -266,12 +307,13 @@ def _check_confidence(conf: Any, field_name: str) -> None:
 
 
 def _check_label(label: Any, field_name: str) -> None:
-    # Grouped under "confidence_bounds" because both label and confidence
-    # are epistemological quality markers on a claim; keeping them under one
-    # check_name simplifies orchestrator error-handling branches.
+    """Raise MemoryWriteError if label is not a Label enum member.
+
+    A raw string would bypass label-consistency checks downstream.
+    """
     if not isinstance(label, Label):
         raise MemoryWriteError(
-            "confidence_bounds",        # grouped under same category for simplicity
+            "confidence_bounds",
             f"{field_name}: {label!r} is not a Label enum member",
         )
 
@@ -281,44 +323,70 @@ def _check_citations(
     retrieved_chunk_ids: set[str],
     field_name: str,
 ) -> None:
-    # Any chunk_id cited in a claim must have been retrieved this session.
-    # This prevents agents from fabricating citations to chunks that were
-    # never fetched from the retrieval layer.
+    """Raise MemoryWriteError if any chunk_id was never retrieved this session.
+
+    This is a pipeline-setup check, not a quality check.  Call it only for
+    agents writing verified evidence — extraction (document chunk_ids assigned
+    by the ingest layer) and validation (new_chunk_ids from an explicit
+    RetrievalSignal cycle).  A non-retrieved ID in those contexts means the
+    orchestrator failed to register the chunk, not that the LLM hallucinated.
+
+    Do NOT call from _validate_claims.  LLM-generated chunk_ids in analysis
+    claims are sanitised by _sanitise_citations instead, so the section can
+    still land and the validation agent can review it.
+    """
     missing = [cid for cid in chunk_ids if cid not in retrieved_chunk_ids]
     if missing:
         raise MemoryWriteError(
-            "citation_integrity",
-            f"{field_name}: chunk_ids not in retrieved set: {missing}",
+            "schema",   # setup error: chunk was never registered in this session
+            f"{field_name}: chunk_ids not registered in session: {missing}",
         )
 
 
-def _check_label_consistency(
-    chunk_ids: list[str],
-    label: Label,
+def _sanitise_label_consistency(
+    claim_or_overturn: Any,
     chunk_lookup: dict[str, Chunk],
-    field_name: str,
+    label_attr: str = "label",
+    chunk_ids_attr: str = "chunk_ids",
 ) -> None:
-    """Corpus chunks → must not be FACT.  Uploaded-doc chunks → must not be RETRIEVED."""
+    """Correct label/source-type mismatches in-place.
+
+    A label mislabel is a reasoning quality problem, not a type failure:
+    the Label value is a valid enum member — the LLM just picked the wrong
+    one for the source.  The pipeline can continue; the validation agent will
+    review the claim.  We correct the label so downstream audit trails are
+    accurate without blocking the write.
+
+    Corrections applied
+    ~~~~~~~~~~~~~~~~~~~
+    Corpus chunk (legislation / official_guidance) labeled FACT
+        → correct to RETRIEVED
+        Rationale: the evidence came from retrieved legislation, not the
+        user's document.  FACT implies it was stated in the upload.
+
+    Uploaded-doc chunk labeled RETRIEVED
+        → correct to FACT
+        Rationale: the evidence came from the user's document, not from
+        retrieved legislation.  RETRIEVED implies a corpus source.
+
+    Works on both Claim (label / chunk_ids) and OverturnedClaim
+    (new_label / new_chunk_ids) via the attr arguments.
+    """
+    chunk_ids: list[str] = getattr(claim_or_overturn, chunk_ids_attr, [])
+    label: Label         = getattr(claim_or_overturn, label_attr)
+
     for cid in chunk_ids:
         chunk = chunk_lookup.get(cid)
         if chunk is None:
-            # The chunk_id is unknown in the current lookup snapshot.
-            # _check_citations already validates existence in retrieved_chunk_ids;
-            # if we reach here with a None lookup it means the lookup is stale,
-            # which is a runtime concern — skip rather than double-raising.
+            # Unknown in the current lookup — _sanitise_citations already
+            # removed truly missing IDs.  Skip without raising.
             continue
         if chunk.source_type in CORPUS_SOURCE_TYPES and label == Label.FACT:
-            raise MemoryWriteError(
-                "label_consistency",
-                f"{field_name}: corpus chunk '{cid}' "
-                f"(source_type={chunk.source_type!r}) cannot be labeled FACT",
-            )
-        if chunk.source_type in UPLOADED_SOURCE_TYPES and label == Label.RETRIEVED:
-            raise MemoryWriteError(
-                "label_consistency",
-                f"{field_name}: uploaded_doc chunk '{cid}' "
-                f"cannot be labeled RETRIEVED",
-            )
+            setattr(claim_or_overturn, label_attr, Label.RETRIEVED)
+            label = Label.RETRIEVED   # update local so subsequent chunks see the fix
+        elif chunk.source_type in UPLOADED_SOURCE_TYPES and label == Label.RETRIEVED:
+            setattr(claim_or_overturn, label_attr, Label.FACT)
+            label = Label.FACT
 
 
 def _validate_claims(
@@ -327,15 +395,70 @@ def _validate_claims(
     chunk_lookup: dict[str, Chunk],
     parent_name: str,
 ) -> None:
-    # Run all four checks on every claim in a section.
-    # The location string (e.g. "definition_check.claims[2]") is threaded
-    # through so any error message pinpoints exactly which claim failed.
+    """Gate structural integrity and sanitise quality issues for every claim.
+
+    Per-claim processing order
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    1. _check_label / _check_confidence  (type gates — raise MemoryWriteError)
+       Invalid enum instances would crash downstream comparisons silently.
+       The section cannot land until these are fixed.
+
+    2. _sanitise_citations               (quality sanitiser — mutates in-place)
+       Strips hallucinated chunk_ids; downgrades affected claims to
+       ASSUMPTION / UNSUPPORTED so the validation agent picks them up.
+
+    3. _sanitise_label_consistency       (quality sanitiser — mutates in-place)
+       Corrects FACT↔RETRIEVED mislabels based on the chunk's actual
+       source type.  Both are valid Label enum values — the LLM just chose
+       the wrong one.  Pipeline continues; audit trail is corrected.
+    """
     for i, claim in enumerate(claims):
         loc = f"{parent_name}.claims[{i}]"
         _check_label(claim.label, f"{loc}.label")
         _check_confidence(claim.confidence, f"{loc}.confidence")
-        _check_citations(claim.chunk_ids, retrieved_chunk_ids, loc)
-        _check_label_consistency(claim.chunk_ids, claim.label, chunk_lookup, loc)
+        _sanitise_citations(claim, retrieved_chunk_ids, loc)
+        _sanitise_label_consistency(claim, chunk_lookup)
+
+
+def _sanitise_citations(
+    claim: Claim,
+    retrieved_chunk_ids: set[str],
+    loc: str,
+) -> None:
+    """Strip hallucinated chunk_ids from *claim* in-place.
+
+    An LLM analysis agent may cite chunk IDs it never retrieved — either by
+    hallucinating plausible-looking IDs or by referencing IDs from a prior
+    session.  Rather than blocking the write (which would prevent the
+    validation agent from ever seeing and correcting the claim), we:
+
+      1. Remove the invalid IDs from claim.chunk_ids.
+      2. If no valid citations remain, downgrade the claim to
+         ASSUMPTION / LOW confidence and set is_weak = True / UNSUPPORTED.
+
+    The degraded claim then flows through the normal validation path:
+      identify_weak_claims picks it up (UNSUPPORTED reason) →
+      validation agent requests targeted retrieval →
+      confirm / overturn / UNRESOLVED →
+      synthesis agent reports honest confidence.
+
+    If some valid citations remain, the claim keeps its original label and
+    confidence; the label-consistency check that follows will use the
+    cleaned chunk_ids.
+    """
+    missing = [cid for cid in claim.chunk_ids if cid not in retrieved_chunk_ids]
+    if not missing:
+        return  # fast path — all citations are valid
+
+    claim.chunk_ids = [cid for cid in claim.chunk_ids if cid in retrieved_chunk_ids]
+
+    if not claim.chunk_ids:
+        # No valid citations remain: the claim has no legislative grounding.
+        # Mark as UNSUPPORTED so the validation agent treats it as a priority.
+        claim.label       = Label.ASSUMPTION
+        claim.confidence  = Confidence.LOW
+        claim.is_weak     = True
+        claim.weak_reason = "UNSUPPORTED"
 
 
 def _validate_dimension_finding(
@@ -447,6 +570,15 @@ class AnalysisAgentMemoryView:
     @property
     def facts(self) -> Optional[FactSection]:
         return copy.deepcopy(self._memory.facts)
+
+    @property
+    def augmented_context(self) -> Optional[AugmentedContext]:
+        """Pre-computed user-doc → legal-provision mappings.
+
+        Read-only.  Returns a deepcopy so the agent cannot mutate the shared
+        context.  None until the orchestrator's augmentation phase completes.
+        """
+        return copy.deepcopy(self._memory.augmented_context)
 
     @property
     def validation_flags(self) -> Optional[ValidationSection]:
@@ -573,6 +705,11 @@ class ValidationAgentMemoryView:
         return copy.deepcopy(self._memory.facts)
 
     @property
+    def augmented_context(self) -> Optional[AugmentedContext]:
+        """Pre-computed mappings — read-only for validation agent."""
+        return copy.deepcopy(self._memory.augmented_context)
+
+    @property
     def definition_check(self) -> Optional[DefinitionSection]:
         return copy.deepcopy(self._memory.definition_check)
 
@@ -622,9 +759,18 @@ class ValidationAgentMemoryView:
 
     @_log_write("overturned_claims", "validation")
     def write_overturned_claims(self, claims: list[OverturnedClaim]) -> None:
-        # OverturnedClaim carries new_chunk_ids (the evidence used to overturn),
-        # so citation integrity and label consistency checks are applied on top
-        # of the standard schema / confidence / label checks.
+        # OverturnedClaim carries new_chunk_ids — the evidence the validation
+        # agent explicitly retrieved to overturn the original claim.
+        #
+        # Type gates (MemoryWriteError):
+        #   _check_schema / _check_confidence / _check_label — same as all writes.
+        #   _check_citations — strict here because new_chunk_ids are pipeline-
+        #   assigned during a RetrievalSignal cycle, not LLM-generated.  A
+        #   non-retrieved ID indicates a setup error, not a quality issue.
+        #
+        # Quality sanitiser:
+        #   _sanitise_label_consistency — corrects FACT↔RETRIEVED mislabels
+        #   in-place using new_label / new_chunk_ids field names.
         if not isinstance(claims, list):
             raise MemoryWriteError("schema", "overturned_claims must be a list")
         for i, oc in enumerate(claims):
@@ -636,11 +782,11 @@ class ValidationAgentMemoryView:
                 self._retrieved_chunk_ids,
                 f"overturned_claims[{i}]",
             )
-            _check_label_consistency(
-                oc.new_chunk_ids,
-                oc.new_label,
+            _sanitise_label_consistency(
+                oc,
                 self._chunk_lookup,
-                f"overturned_claims[{i}]",
+                label_attr="new_label",
+                chunk_ids_attr="new_chunk_ids",
             )
         self._memory.overturned_claims = copy.deepcopy(claims)
 
@@ -676,6 +822,17 @@ class SynthesisAgentMemoryView:
     @property
     def facts(self) -> Optional[FactSection]:
         return copy.deepcopy(self._memory.facts)
+
+    @property
+    def augmented_context(self) -> Optional[AugmentedContext]:
+        """Pre-computed mappings — read-only for synthesis agent.
+
+        The synthesis agent uses this to distinguish 'dimension UNRESOLVED
+        because no corpus coverage exists' from 'dimension INSUFFICIENT
+        because analysis never ran' — a distinction it should surface in
+        the missing_information section.
+        """
+        return copy.deepcopy(self._memory.augmented_context)
 
     @property
     def definition_check(self) -> Optional[DefinitionSection]:

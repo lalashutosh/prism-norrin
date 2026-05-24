@@ -84,6 +84,7 @@ class Orchestrator:
         extraction_fn: Optional[Callable] = None,
         llm_client: Any = None,
         prism_logger: Optional[PrismLogger] = None,
+        session_id: Optional[str] = None,
     ) -> None:
         self._retrieve_fn    = retrieve_fn
         self._extraction_fn  = extraction_fn
@@ -91,6 +92,10 @@ class Orchestrator:
         # Optional structured logging.  None → all _log_* calls are no-ops so
         # existing tests that create Orchestrator without a logger continue to work.
         self._prism_logger   = prism_logger
+        # Session ID for augmentation — used to load all user-doc chunks from
+        # the session DB.  None → augmentation phase is silently skipped so
+        # existing tests and in-memory document paths remain unaffected.
+        self._session_id     = session_id
 
         self._memory: SessionMemory = SessionMemory()
         # Convenience alias — orchestrator accesses _orchestrator directly.
@@ -186,13 +191,22 @@ class Orchestrator:
         self._save_checkpoint("after_extraction")
         logger.info("Checkpoint saved: after_extraction")
 
-        # ── Step 2: initial broad retrieval ─────────────────────────────────
+        # ── Step 2: augmentation — map user-doc chunks to legal provisions ───
+        # Runs before analysis so agents receive pre-filtered, dimension-specific
+        # legal context.  Silently skipped when session_id is not provided (e.g.
+        # tests that inject facts directly or use in-memory documents).
+        self._run_augmentation_phase()
+        logger.info("Augmentation phase complete.")
+
+        # ── Step 3: initial broad retrieval (fallback / warm-up) ────────────
+        # Still performed so the retrieval cache is populated and agents can
+        # emit RetrievalSignals if the augmentation missed something.
         f = self._memory.facts
         initial_query = f"{f.use_case_name} {f.description}"[:300]
         self._retrieve_and_cache(initial_query, {})
         logger.info("Initial broad retrieval complete.")
 
-        # ── Steps 3–5: analysis / validation / synthesis (with loop) ────────
+        # ── Steps 4–6: analysis / validation / synthesis (with loop) ────────
         # loop_context carries the synthesis agent's refined guidance back into
         # the analysis agent on a second pass.  Empty on the first pass.
         loop_context: str = ""
@@ -261,6 +275,92 @@ class Orchestrator:
         if facts.source_chunk_ids:
             for cid in facts.source_chunk_ids:
                 self._state.retrieved_chunk_ids.add(cid)
+
+    # ── Augmentation phase ────────────────────────────────────────────────────
+
+    def _run_augmentation_phase(self) -> None:
+        """Pre-compute user-document → legal-provision mappings for all dimensions.
+
+        Loads ALL user-doc chunks from the session DB (not just the top-10 that
+        retrieve() returns), then calls run_augmentation() which issues one
+        targeted retrieve() per dimension with the correct source_type filter.
+
+        Side effects:
+        * memory.augmented_context is populated.
+        * All legal chunk_ids from the mappings are registered in
+          retrieved_chunk_ids so the memory proxy's citation sanitiser
+          accepts claims that cite them.
+
+        Silently no-ops when session_id is None (tests / in-memory paths).
+        """
+        if not self._session_id:
+            logger.debug("No session_id — skipping augmentation phase.")
+            return
+
+        phase_start = time.time()
+        self._log_pipeline("AGENT_STARTED", agent="augmentation")
+
+        try:
+            from retrieval.upload_ingest import load_session       # noqa: PLC0415
+            from core.augmentation import run_augmentation         # noqa: PLC0415
+
+            user_chunks, _ = load_session(self._session_id)
+            if not user_chunks:
+                logger.warning(
+                    "Augmentation: no user chunks found for session '%s'.",
+                    self._session_id,
+                )
+                self._log_pipeline(
+                    "AGENT_COMPLETED", agent="augmentation",
+                    duration_ms=int((time.time() - phase_start) * 1000),
+                    metadata={"user_chunks": 0},
+                )
+                return
+
+            augmented = run_augmentation(user_chunks, self._retrieve_fn)
+            self._memory.augmented_context = augmented
+
+            # Register every legal chunk_id as "retrieved" so the citation
+            # sanitiser in the memory proxy accepts them as valid citations.
+            total_mappings = 0
+            for dim, mappings in augmented.mappings_by_dimension.items():
+                for m in mappings:
+                    if m.legal_chunk_id:
+                        self._state.retrieved_chunk_ids.add(m.legal_chunk_id)
+                total_mappings += len(mappings)
+
+            # Also register user-doc chunk_ids so agents can cite FACT claims.
+            for c in user_chunks:
+                self._state.retrieved_chunk_ids.add(c.chunk_id)
+
+            self._log_pipeline(
+                "AGENT_COMPLETED", agent="augmentation",
+                duration_ms=int((time.time() - phase_start) * 1000),
+                metadata={
+                    "user_chunks": len(user_chunks),
+                    "total_mappings": total_mappings,
+                    "dimensions": list(augmented.mappings_by_dimension.keys()),
+                },
+            )
+            logger.info(
+                "Augmentation: %d user chunks mapped across %d dimensions "
+                "(%d total mappings).",
+                len(user_chunks),
+                len(augmented.mappings_by_dimension),
+                total_mappings,
+            )
+
+        except Exception as exc:   # noqa: BLE001
+            # Augmentation failure must never crash the pipeline — fall back
+            # to the legacy retrieve-on-demand path used by the analysis agent.
+            logger.warning(
+                "Augmentation phase failed (%s); continuing without it.", exc
+            )
+            self._log_pipeline(
+                "AGENT_COMPLETED", agent="augmentation",
+                duration_ms=int((time.time() - phase_start) * 1000),
+                metadata={"error": str(exc)},
+            )
 
     # ── Analysis phase ───────────────────────────────────────────────────────
 
@@ -600,7 +700,24 @@ class Orchestrator:
         fallback_checkpoint: str,
         agent_name: str,
     ) -> None:
-        """Log and attempt rollback on MemoryWriteError."""
+        """Roll back session state on structural type failures.
+
+        MemoryWriteError fires only on type-level corruption — values that
+        downstream pipeline code cannot process correctly regardless of what
+        any agent later decides:
+          - Wrong dataclass type in a slot ("schema")
+          - Raw string instead of Confidence/Label enum ("confidence_bounds")
+
+        Everything else is sanitised upstream and never reaches here:
+          - Hallucinated chunk_ids   → _sanitise_citations (strip + downgrade)
+          - Label/source mislabels   → _sanitise_label_consistency (correct in-place)
+          - Low confidence / weak claims → handled by validation + synthesis
+
+        The orchestrator has no EU AI Act context and cannot judge reasoning
+        quality.  Its only role here is to detect that a section slot contains
+        mechanically unusable data and roll the pipeline back to a known-good
+        checkpoint so the producing agent can retry.
+        """
         logger.error(
             "MemoryWriteError in %s agent [%s]: %s",
             agent_name,

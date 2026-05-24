@@ -33,6 +33,7 @@ import re
 from typing import Any, Optional, Union
 
 from core.types import (
+    AugmentedContext,
     Chunk,
     Claim,
     ClaimStatus,
@@ -49,6 +50,10 @@ from core.types import (
     RolesSection,
     TransparencySection,
     FactSection,
+)
+from core.augmentation import (
+    build_dimension_chunks,
+    serialise_augmented_context,
 )
 from core.logger import log_reasoning
 from core.memory import AnalysisAgentMemoryView
@@ -161,14 +166,26 @@ def build_dimension_prompt(
     chunks: list[Chunk],
     dimension_id: str,
     refined_context: str = "",
+    augmented_context: Optional[AugmentedContext] = None,
 ) -> str:
     """Render the full user-turn prompt for a single dimension assessment.
 
-    Pure function — takes structured data, returns a string.
-    No I/O or side effects.
+    When *augmented_context* is provided the RETRIEVED CHUNKS block is
+    replaced with the pre-mapped context produced by the augmentation layer.
+    This renders both the legal provisions and the user-document facts that
+    triggered each mapping, and explicitly lists the only valid chunk_ids.
+
+    Pure function — takes structured data, returns a string.  No I/O or
+    side effects.
     """
     facts_text = _serialise_facts(facts)
-    chunks_text = _serialise_chunks(chunks)
+
+    if augmented_context is not None:
+        aug_text = serialise_augmented_context(augmented_context, dimension_id)
+        chunks_text = aug_text if aug_text else _serialise_chunks(chunks)
+    else:
+        chunks_text = _serialise_chunks(chunks)
+
     context_block = (
         f"ADDITIONAL CONTEXT FROM LOOP REFINEMENT\n{refined_context}"
         if refined_context.strip()
@@ -564,14 +581,40 @@ def run_analysis_agent(
             "FactSection not available in memory; extraction must run first."
         )
 
-    max_reached: set[str] = context.get("max_retrievals_reached", set())
-    refined_context: str  = context.get("refined_context", "")
+    max_reached: set[str]       = context.get("max_retrievals_reached", set())
+    refined_context: str        = context.get("refined_context", "")
+    aug_ctx: Optional[AugmentedContext] = memory.augmented_context
 
     for dimension_id in DIMENSION_ORDER:
         # Resume detection — skip already-written sections.
         if _is_dimension_done(memory, dimension_id):
             continue
 
+        if aug_ctx is not None:
+            # ── Augmented path ───────────────────────────────────────────────
+            # The augmentation layer pre-fetched the right legal chunks for
+            # this dimension with the correct source_type filter (no Article 5
+            # dilution).  Use these as the primary evidence source.
+            # User-doc chunks are embedded in the serialised augmented context
+            # so agents can cite them directly as FACT claims.
+            aug_chunks = build_dimension_chunks(aug_ctx, dimension_id)
+            # Check sufficiency; if the augmented context has authoritative
+            # chunks we proceed even without a RetrievalSignal cycle.
+            if aug_chunks:
+                prompt = build_dimension_prompt(
+                    facts, aug_chunks, dimension_id, refined_context,
+                    augmented_context=aug_ctx,
+                )
+                _logged_llm = log_reasoning(agent="analysis", dimension=dimension_id)(_call_llm)
+                response_text = _logged_llm(prompt, ANALYSIS_SYSTEM_PROMPT, llm_client)
+                finding = parse_dimension_response(response_text, dimension_id)
+                _write_dimension(memory, dimension_id, finding)
+                continue
+
+            # Augmentation returned nothing for this dimension — fall through
+            # to the legacy retrieval path below.
+
+        # ── Legacy retrieval path (no augmented context, or empty for dim) ───
         relevant_chunks = _filter_chunks_for_dimension(chunks, dimension_id)
         sufficient, reason = check_evidence_sufficiency(relevant_chunks, dimension_id)
 

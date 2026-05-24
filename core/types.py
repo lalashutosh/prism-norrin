@@ -278,6 +278,66 @@ class ConfidenceSection:
     overall:             Confidence = Confidence.INSUFFICIENT
 
 
+# ── Augmentation types ──────────────────────────────────────────────────────
+
+@dataclass
+class FactToLawMapping:
+    """A single mapping from a piece of user-document content to one legal provision.
+
+    Created by the augmentation layer before any analysis agent runs.
+    Analysis agents receive a list of these and MUST restrict citations to
+    the ``legal_chunk_id`` values present in their dimension's mapping list.
+
+    Fields
+    ──────
+    user_chunk_id    chunk_id from the session DB (source_type "uploaded_doc").
+                     Empty string when no specific user chunk matched (i.e. the
+                     legal provision is dimension-relevant but has no direct user
+                     counterpart — still shown as context to the agent).
+    user_chunk_text  First 400 chars of the user-document chunk, for display in
+                     the analysis prompt so the agent sees the exact text that
+                     triggered the mapping.
+    legal_chunk_id   chunk_id of the matched corpus node.
+    article_id       Canonical article reference extracted from the corpus node
+                     (e.g. "Article 3(1)", "Annex III").
+    legal_text       Full text of the corpus node.
+    source_type      "legislation" | "official_guidance"
+    dimension        Which analysis dimension this mapping primarily serves.
+    """
+    user_chunk_id:   str
+    user_chunk_text: str
+    legal_chunk_id:  str
+    article_id:      str
+    legal_text:      str
+    source_type:     str
+    dimension:       str
+
+
+@dataclass
+class AugmentedContext:
+    """Pre-computed mappings from user-document facts to legal provisions.
+
+    Built once by the augmentation phase (after extraction, before analysis).
+    Every analysis dimension gets its own list of FactToLawMapping entries —
+    the complete, pre-filtered evidence the agent is allowed to reason over.
+
+    Design invariants
+    ─────────────────
+    * Every legal_chunk_id that appears in any mapping has already been
+      registered in OrchestratorState.retrieved_chunk_ids so that the
+      memory proxy's citation sanitiser accepts the claim.
+    * Analysis agents MUST NOT cite chunk_ids outside their dimension's mapping
+      list.  The prompt explicitly lists the valid IDs.
+    * user_chunks holds ALL user-document chunks loaded from the session DB.
+      Analysis agents cite these as FACT claims (label=FACT, source uploaded_doc).
+    """
+    mappings_by_dimension: dict[str, list["FactToLawMapping"]] = field(
+        default_factory=dict
+    )
+    # All user-document chunks for this session — available for FACT citations.
+    user_chunks: list["Chunk"] = field(default_factory=list)
+
+
 # ── Orchestrator private state ───────────────────────────────────────────────
 
 @dataclass
@@ -331,18 +391,43 @@ class CompletionSignal:
 # ── Errors ───────────────────────────────────────────────────────────────────
 
 class MemoryWriteError(Exception):
-    """Raised by a proxy write method when any validation check fails.
+    """Raised by a proxy write method when a write would corrupt pipeline state.
 
-    The orchestrator catches this, logs the reason, and decides whether to
-    retry, flag corruption, or roll back to a checkpoint.
+    Definition
+    ----------
+    MemoryWriteError fires ONLY on *type-level failures* — writes that would
+    embed a value downstream code cannot process correctly regardless of what
+    any agent later decides.  It is NOT a signal about reasoning quality.
+
+    check_name values and what they mean
+    -------------------------------------
+    "schema"
+        Wrong Python type in a memory slot — e.g. a RiskSection passed to
+        write_definition().  Every downstream attribute access would fail with
+        AttributeError or silently read the wrong fields.
+
+    "confidence_bounds"
+        Raw string or None instead of a Confidence/Label enum instance.
+        e.g. "HIGH" instead of Confidence.HIGH.  Enum comparisons in the
+        orchestrator loop condition and quality checks would silently evaluate
+        to False for every comparison, producing incorrect pipeline behaviour
+        with no error raised anywhere downstream.
+
+    What MemoryWriteError is NOT
+    ----------------------------
+    - Hallucination (wrong content, fabricated citations)
+      → sanitised by _sanitise_citations; handled by validation agent
+    - Label/source mismatch (corpus chunk labeled FACT)
+      → sanitised by _sanitise_label_consistency; a quality issue, not a crash
+    - Low confidence / weak claims
+      → expected analysis output; handled by validation + synthesis chain
+    - Empty or garbage text in a finding field
+      → parsing degrades to empty section; downstream sees INSUFFICIENT
 
     Attributes
     ----------
-    check_name : str
-        Which validation check failed: "schema" | "citation_integrity" |
-        "label_consistency" | "confidence_bounds".
-    detail : str
-        Human-readable explanation of the exact failure.
+    check_name : str   "schema" | "confidence_bounds"
+    detail     : str   Human-readable explanation of the exact failure.
     """
     def __init__(self, check_name: str, detail: str) -> None:
         self.check_name = check_name

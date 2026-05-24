@@ -31,6 +31,7 @@ import re
 from typing import Any, Optional, Union
 
 from core.types import (
+    AugmentedContext,
     Chunk,
     Claim,
     ClaimStatus,
@@ -45,6 +46,7 @@ from core.types import (
     ValidationSection,
     WeakClaim,
 )
+from core.augmentation import build_dimension_chunks
 from core.logger import log_reasoning
 from core.memory import ValidationAgentMemoryView
 from prompts.validation_prompts import (
@@ -281,15 +283,33 @@ def _get_analysis_sections(
 def _get_chunks_for_claim(
     weak_claim: WeakClaim,
     all_chunks: list[Chunk],
+    aug_ctx: Optional[AugmentedContext] = None,
 ) -> list[Chunk]:
-    """Filter the session chunk pool to those relevant to *weak_claim*.
+    """Return chunks relevant to *weak_claim* for validation.
 
-    Relevance is determined by:
-      1. Chunks already cited by the original claim (exact match by chunk_id).
-      2. Chunks whose text contains dimension-level keywords.
-    Falls back to all chunks if neither yields results.
+    Priority order:
+      1. **Augmented context** (when available): uses the pre-computed,
+         dimension-specific legal chunks from the augmentation layer.
+         These are already filtered by source_type so Article 5 official
+         guidance cannot bleed into non-prohibited-practices claims.
+         User-document chunks are appended (up to 4) so the validator
+         can also assess FACT labels.
+      2. **Legacy path** (fallback): keyword-filters the general chunk pool
+         by dimension keywords.  Used when augmented context is absent
+         (no session_id, tests, or augmentation error) or returns nothing.
+
+    Falls back to all_chunks if neither path yields results.
     """
-    # We don't have claim.chunk_ids directly; use dimension keywords instead.
+    if aug_ctx is not None:
+        # Augmented path: dimension-specific legal chunks (pre-filtered source_type)
+        aug_chunks = build_dimension_chunks(aug_ctx, weak_claim.dimension_id)
+        if aug_chunks:
+            # Append a handful of user-doc chunks so FACT claims can be validated.
+            user_supplement = aug_ctx.user_chunks[:4]
+            # Deduplicate: aug_chunks are all legal; user_chunks are all uploaded_doc.
+            return aug_chunks + user_supplement
+
+    # Legacy path: keyword filtering from general pool
     keywords = DIMENSION_KEYWORDS.get(weak_claim.dimension_id, [])
     relevant = [
         c for c in all_chunks
@@ -331,6 +351,11 @@ def run_validation_agent(
     if facts is None:
         raise ValueError("FactSection not available in memory.")
 
+    # Read the pre-computed augmented context once; passed through to
+    # _get_chunks_for_claim so each claim gets dimension-specific legal
+    # chunks rather than a keyword-filtered slice of the general pool.
+    aug_ctx: Optional[AugmentedContext] = memory.augmented_context
+
     analysis_sections = _get_analysis_sections(memory)
     all_weak          = identify_weak_claims(analysis_sections)
 
@@ -355,7 +380,11 @@ def run_validation_agent(
             continue  # already handled in a prior invocation
 
         # Check evidence availability for this claim.
-        relevant = _get_chunks_for_claim(wc, chunks)
+        # When augmented context is available _get_chunks_for_claim returns
+        # dimension-specific legal chunks that are *always* authoritative,
+        # so the RetrievalSignal below fires only on the legacy path when
+        # the general chunk pool genuinely lacks authoritative coverage.
+        relevant = _get_chunks_for_claim(wc, chunks, aug_ctx=aug_ctx)
         has_authoritative = any(
             c.source_type in ("legislation", "official_guidance") for c in relevant
         )
