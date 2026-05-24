@@ -555,10 +555,28 @@ def parse_synthesis_response(
         follow_raw   = raw.get("follow_up", {})
         conf_raw     = raw.get("confidence", {})
 
+        # ── Compute overall programmatically ────────────────────────────────
+        # The LLM tends to set overall=LOW whenever there are information gaps,
+        # ignoring the per-dimension scores.  We override it with the minimum
+        # of the six dimension scores (most conservative, correct for compliance).
+        _CONF_ORDER = [Confidence.HIGH, Confidence.MEDIUM, Confidence.LOW, Confidence.INSUFFICIENT]
+        _dim_confs = [
+            _parse_confidence(conf_raw.get("definition_check",    "INSUFFICIENT")),
+            _parse_confidence(conf_raw.get("risk_classification", "INSUFFICIENT")),
+            _parse_confidence(conf_raw.get("prohibited_practices","INSUFFICIENT")),
+            _parse_confidence(conf_raw.get("transparency",        "INSUFFICIENT")),
+            _parse_confidence(conf_raw.get("roles",               "INSUFFICIENT")),
+            _parse_confidence(conf_raw.get("governance",          "INSUFFICIENT")),
+        ]
+        _computed_overall = next(
+            (c for c in reversed(_CONF_ORDER) if c in _dim_confs), Confidence.INSUFFICIENT
+        )
+
         # confidence_score lives inside the report object so it is surfaced
         # as a named section in the output.  Fall back to the top-level
         # confidence dict if the LLM omits it from the report block.
-        conf_score_raw = report_raw.get("confidence_score") or conf_raw
+        conf_score_raw = dict(report_raw.get("confidence_score") or conf_raw)
+        conf_score_raw["overall"] = _computed_overall.value   # patch with computed value
 
         report = ReportSection(
             use_case_summary=str(report_raw.get("use_case_summary", "")),
@@ -576,7 +594,7 @@ def parse_synthesis_response(
                 report_raw.get("governance_observations", {})
             ),
             missing_information=dict(report_raw.get("missing_information", {})),
-            confidence_score=dict(conf_score_raw),
+            confidence_score=conf_score_raw,
             # citations_by_source, evidence_separation, and agent_trace are all
             # injected programmatically in run_synthesis_agent() after parsing.
         )
@@ -587,13 +605,13 @@ def parse_synthesis_response(
         )
 
         confidence = ConfidenceSection(
-            definition_check=_parse_confidence(conf_raw.get("definition_check", "INSUFFICIENT")),
-            risk_classification=_parse_confidence(conf_raw.get("risk_classification", "INSUFFICIENT")),
-            prohibited_practices=_parse_confidence(conf_raw.get("prohibited_practices", "INSUFFICIENT")),
-            transparency=_parse_confidence(conf_raw.get("transparency", "INSUFFICIENT")),
-            roles=_parse_confidence(conf_raw.get("roles", "INSUFFICIENT")),
-            governance=_parse_confidence(conf_raw.get("governance", "INSUFFICIENT")),
-            overall=_parse_confidence(conf_raw.get("overall", "INSUFFICIENT")),
+            definition_check=_dim_confs[0],
+            risk_classification=_dim_confs[1],
+            prohibited_practices=_dim_confs[2],
+            transparency=_dim_confs[3],
+            roles=_dim_confs[4],
+            governance=_dim_confs[5],
+            overall=_computed_overall,
         )
 
         return report, follow_up, confidence
