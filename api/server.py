@@ -188,7 +188,6 @@ def _run_pipeline(job_id: str, tmp_path: str) -> None:
             retrieve_fn   = partial(retrieve, session_id=session_id),
             extraction_fn = partial(run_extraction_agent, llm_client=llm_client),
             llm_client    = llm_client,
-            session_id    = session_id,
         )
 
         # Periodically update the stage to reflect LLM availability.

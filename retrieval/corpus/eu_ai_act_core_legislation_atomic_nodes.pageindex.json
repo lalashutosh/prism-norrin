@@ -1,0 +1,751 @@
+{
+  "version": "1.0",
+  "source_type": "legislation",
+  "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+  "tree": {
+    "node_id": "root",
+    "title": "Document",
+    "level": 0,
+    "text": "",
+    "summary": "Article 3(1): 'AI system' means a machine-based system that is designed to operate with varying levels of autonomy and that may exhibit adaptiveness after deployment, and that, for explicit or implicit objectives, infers, from the input it receives, how to generate outputs such as predictions, conte…",
+    "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+    "source_type": "legislation",
+    "article_id": null,
+    "children": [
+      {
+        "node_id": "ctr_title_i_general_provisions_642488fd",
+        "title": "Title I — General Provisions",
+        "level": 1,
+        "text": "",
+        "summary": "Article 3(1): 'AI system' means a machine-based system that is designed to operate with varying levels of autonomy and that may exhibit adaptiveness after deployment, and that, for explicit or implicit objectives, infers, from the input it receives, how to generate outputs such as predictions, conte…",
+        "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+        "source_type": "legislation",
+        "article_id": null,
+        "children": [
+          {
+            "node_id": "ctr_title_i_general_provisions_article_3_definitions_64f21acc",
+            "title": "Article 3 — Definitions",
+            "level": 2,
+            "text": "",
+            "summary": "Article 3(1): 'AI system' means a machine-based system that is designed to operate with varying levels of autonomy and that may exhibit adaptiveness after deployment, and that, for explicit or implicit objectives, infers, from the input it receives, how to generate outputs such as predictions, conte…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Article 3",
+            "children": [
+              {
+                "node_id": "AIA_Art3_1_ai_system_definition",
+                "title": "Article 3(1) — Definition of AI system",
+                "level": 3,
+                "text": "Article 3(1): 'AI system' means a machine-based system that is designed to operate with varying levels of autonomy and that may exhibit adaptiveness after deployment, and that, for explicit or implicit objectives, infers, from the input it receives, how to generate outputs such as predictions, content, recommendations, or decisions that can influence physical or virtual environments.",
+                "summary": "Article 3(1): 'AI system' means a machine-based system that is designed to operate with varying levels of autonomy and that may exhibit adaptiveness after deployment, and that, for explicit or implicit objectives, infers, from the input it receives, how to generate outputs such as predictions, conte…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 3(1)",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art3_2_general_purpose_ai_model",
+                "title": "Article 3(63) — Definition of general-purpose AI model",
+                "level": 3,
+                "text": "Article 3(63): 'general-purpose AI model' means an AI model, including where such an AI model is trained with a large amount of data using self-supervision at scale, that displays significant generality and is capable of competently performing a wide range of distinct tasks regardless of the way the model is placed on the market and that can be integrated into a variety of downstream systems or applications, except AI models that are used for research, development or prototyping activities before they are placed on the market.",
+                "summary": "Article 3(63): 'general-purpose AI model' means an AI model, including where such an AI model is trained with a large amount of data using self-supervision at scale, that displays significant generality and is capable of competently performing a wide range of distinct tasks regardless of the way the…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 3(63)",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art3_3_provider_definition",
+                "title": "Article 3(3) — Definition of provider",
+                "level": 3,
+                "text": "Article 3(3): 'provider' means a natural or legal person, public authority, agency or other body that develops an AI system or a general-purpose AI model and places it on the market or puts it into service under its own name or trademark, whether for payment or free of charge.",
+                "summary": "Article 3(3): 'provider' means a natural or legal person, public authority, agency or other body that develops an AI system or a general-purpose AI model and places it on the market or puts it into service under its own name or trademark, whether for payment or free of charge.",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 3(3)",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art3_4_deployer_definition",
+                "title": "Article 3(4) — Definition of deployer",
+                "level": 3,
+                "text": "Article 3(4): 'deployer' means a natural or legal person, public authority, agency or other body that uses an AI system under its authority except where the AI system is used in the course of a personal non-professional activity.",
+                "summary": "Article 3(4): 'deployer' means a natural or legal person, public authority, agency or other body that uses an AI system under its authority except where the AI system is used in the course of a personal non-professional activity.",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 3(4)",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art3_5_authorised_representative",
+                "title": "Article 3(5) — Authorised representative",
+                "level": 3,
+                "text": "Article 3(5): 'authorised representative' means a natural or legal person located or established in the Union who has received and accepted a written mandate from a provider of an AI system or a general-purpose AI model to, respectively, perform and carry out on its behalf the obligations and procedures established by this Regulation.",
+                "summary": "Article 3(5): 'authorised representative' means a natural or legal person located or established in the Union who has received and accepted a written mandate from a provider of an AI system or a general-purpose AI model to, respectively, perform and carry out on its behalf the obligations and proced…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 3(5)",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art3_importer_distributor",
+                "title": "Article 3(6)(7) — Importer and Distributor",
+                "level": 3,
+                "text": "Article 3(6): 'importer' means a natural or legal person located or established in the Union that places on the market an AI system that bears the name or trademark of a natural or legal person established in a third country. Article 3(7): 'distributor' means a natural or legal person in the supply chain, other than the provider or the importer, that makes an AI system available on the Union market without modifying it.",
+                "summary": "Article 3(6): 'importer' means a natural or legal person located or established in the Union that places on the market an AI system that bears the name or trademark of a natural or legal person established in a third country. Article 3(7): 'distributor' means a natural or legal person in the supply…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 3(6)",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art3_high_risk_ai_system",
+                "title": "Article 3(8) — High-risk AI system",
+                "level": 3,
+                "text": "Article 3(8): 'high-risk AI system' means an AI system that poses a significant risk to the health, safety or fundamental rights of natural persons, as referred to in Article 6.",
+                "summary": "Article 3(8): 'high-risk AI system' means an AI system that poses a significant risk to the health, safety or fundamental rights of natural persons, as referred to in Article 6.",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 3(8)",
+                "children": []
+              }
+            ]
+          },
+          {
+            "node_id": "AIA_minimal_risk_general",
+            "title": "Minimal-risk AI systems — General description",
+            "level": 2,
+            "text": "Minimal-risk AI systems: The vast majority of AI systems currently used in the EU fall into the minimal risk category. This includes AI applications such as AI-enabled video games or spam filters. The Regulation does not impose specific requirements on minimal-risk AI systems, though providers may voluntarily adhere to codes of conduct. Minimal-risk systems do not need to undergo conformity assessments, do not require CE marking, and are not subject to the requirements in Title III (high-risk) or Title IV (transparency for certain systems).",
+            "summary": "Minimal-risk AI systems: The vast majority of AI systems currently used in the EU fall into the minimal risk category. This includes AI applications such as AI-enabled video games or spam filters. The Regulation does not impose specific requirements on minimal-risk AI systems, though providers may v…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": null,
+            "children": []
+          },
+          {
+            "node_id": "AIA_Art2_scope",
+            "title": "Article 2 — Scope",
+            "level": 2,
+            "text": "Article 2(1): This Regulation applies to: (a) providers placing on the market or putting into service AI systems or placing on the market general-purpose AI models in the Union, irrespective of whether those providers are established or located within the Union or in a third country; (b) deployers of AI systems that have their place of establishment or are located within the Union; (c) providers and deployers of AI systems that have their place of establishment or are located in a third country, where the output produced by the AI system is used in the Union; (d) importers and distributors of AI systems; (e) product manufacturers placing on the market or putting into service an AI system together with their product and under their own name or trademark; (f) authorised representatives of providers, which are not established in the Union; (g) affected persons that are located in the Union.",
+            "summary": "Article 2(2)(3): This Regulation does not apply to: AI systems exclusively developed or used for military, national security, defence or intelligence activities; AI systems exclusively developed and put into service for the sole purpose of scientific research and development; AI systems released und…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Article 2",
+            "children": [
+              {
+                "node_id": "AIA_Art2_scope_exclusions",
+                "title": "Article 2(2)(3) — Exclusions",
+                "level": 3,
+                "text": "Article 2(2)(3): This Regulation does not apply to: AI systems exclusively developed or used for military, national security, defence or intelligence activities; AI systems exclusively developed and put into service for the sole purpose of scientific research and development; AI systems released under free and open-source licences, unless they are placed on the market or put into service as high-risk AI systems or as AI systems referred to in Article 5 or 50; natural persons using AI systems in the course of a purely personal non-professional activity.",
+                "summary": "Article 2(2)(3): This Regulation does not apply to: AI systems exclusively developed or used for military, national security, defence or intelligence activities; AI systems exclusively developed and put into service for the sole purpose of scientific research and development; AI systems released und…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 2(2)",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "node_id": "ctr_annex_i_list_of_ai_techniques_and_approaches_8e5190b2",
+        "title": "Annex I — List of AI Techniques and Approaches",
+        "level": 1,
+        "text": "",
+        "summary": "Annex I: Machine learning approaches, including supervised, unsupervised and reinforcement learning, using a wide variety of methods including deep learning. Logic- and knowledge-based approaches, including knowledge representation, inductive (logic) programming, knowledge bases, inference and deduc…",
+        "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+        "source_type": "legislation",
+        "article_id": "Annex I",
+        "children": [
+          {
+            "node_id": "AIA_AnnexI_ai_techniques",
+            "title": "Techniques referred to in Article 3(1)",
+            "level": 2,
+            "text": "Annex I: Machine learning approaches, including supervised, unsupervised and reinforcement learning, using a wide variety of methods including deep learning. Logic- and knowledge-based approaches, including knowledge representation, inductive (logic) programming, knowledge bases, inference and deductive engines, (symbolic) reasoning and expert systems. Statistical approaches, Bayesian estimation, search and optimisation methods.",
+            "summary": "Annex I: Machine learning approaches, including supervised, unsupervised and reinforcement learning, using a wide variety of methods including deep learning. Logic- and knowledge-based approaches, including knowledge representation, inductive (logic) programming, knowledge bases, inference and deduc…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Article 3(1)",
+            "children": []
+          }
+        ]
+      },
+      {
+        "node_id": "ctr_title_iii_high_risk_ai_systems_c2f19b88",
+        "title": "Title III — High-Risk AI Systems",
+        "level": 1,
+        "text": "",
+        "summary": "Article 6(1): Irrespective of whether an AI system is placed on the market or put into service independently from the products referred to in points (a) and (b), that AI system shall be considered to be high-risk where both of the following conditions are fulfilled: (a) the AI system is intended to……",
+        "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+        "source_type": "legislation",
+        "article_id": null,
+        "children": [
+          {
+            "node_id": "ctr_title_iii_high_risk_ai_systems_chapter_i_classification_of_a_0541219a",
+            "title": "Chapter I — Classification of AI systems as high-risk",
+            "level": 2,
+            "text": "",
+            "summary": "Article 6(1): Irrespective of whether an AI system is placed on the market or put into service independently from the products referred to in points (a) and (b), that AI system shall be considered to be high-risk where both of the following conditions are fulfilled: (a) the AI system is intended to……",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": null,
+            "children": [
+              {
+                "node_id": "ctr_title_iii_high_risk_ai_systems_chapter_i_classification_of_a_ce8805e7",
+                "title": "Article 6 — Classification rules for high-risk AI systems",
+                "level": 3,
+                "text": "",
+                "summary": "Article 6(1): Irrespective of whether an AI system is placed on the market or put into service independently from the products referred to in points (a) and (b), that AI system shall be considered to be high-risk where both of the following conditions are fulfilled: (a) the AI system is intended to……",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 6",
+                "children": [
+                  {
+                    "node_id": "AIA_Art6_1_high_risk_classification_annex_II",
+                    "title": "Article 6(1) — Safety components",
+                    "level": 4,
+                    "text": "Article 6(1): Irrespective of whether an AI system is placed on the market or put into service independently from the products referred to in points (a) and (b), that AI system shall be considered to be high-risk where both of the following conditions are fulfilled: (a) the AI system is intended to be used as a safety component of a product, or the AI system is itself a product, covered by the Union harmonisation legislation listed in Annex II; (b) the product whose safety component pursuant to point (a) is the AI system, or the AI system itself as a product, is required to undergo a third-party conformity assessment with a view to the placing on the market or putting into service of that product pursuant to the Union harmonisation legislation listed in Annex II.",
+                    "summary": "Article 6(1): Irrespective of whether an AI system is placed on the market or put into service independently from the products referred to in points (a) and (b), that AI system shall be considered to be high-risk where both of the following conditions are fulfilled: (a) the AI system is intended to…",
+                    "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                    "source_type": "legislation",
+                    "article_id": "Article 6(1)",
+                    "children": []
+                  },
+                  {
+                    "node_id": "AIA_Art6_2_high_risk_classification_annex_III",
+                    "title": "Article 6(2) — Annex III high-risk categories",
+                    "level": 4,
+                    "text": "Article 6(2): In addition to the high-risk AI systems referred to in paragraph 1, AI systems referred to in Annex III shall also be considered to be high-risk. This covers AI systems that pose significant risk to health, safety or fundamental rights in the areas listed in Annex III, including: biometric identification, critical infrastructure, education, employment, essential services, law enforcement, migration, and administration of justice.",
+                    "summary": "Article 6(2): In addition to the high-risk AI systems referred to in paragraph 1, AI systems referred to in Annex III shall also be considered to be high-risk. This covers AI systems that pose significant risk to health, safety or fundamental rights in the areas listed in Annex III, including: biome…",
+                    "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                    "source_type": "legislation",
+                    "article_id": "Article 6(2)",
+                    "children": []
+                  },
+                  {
+                    "node_id": "AIA_Art6_3_not_high_risk_conditions",
+                    "title": "Article 6(3) — Exceptions for Annex III systems",
+                    "level": 4,
+                    "text": "Article 6(3): An AI system referred to in Annex III shall not be considered to be high-risk if it does not pose a significant risk of harm to the health, safety or fundamental rights of natural persons, including by not materially influencing the outcome of decision making. An AI system shall not be considered high-risk if it is intended to perform a narrow procedural task, intended to improve the result of a previously completed human activity, intended to detect decision-making patterns or deviations from prior decision-making patterns and is not meant to replace or influence the previously completed human assessment without proper human review, or intended to perform a preparatory task to an assessment relevant for the purposes of the use cases listed in Annex III.",
+                    "summary": "Article 6(3): An AI system referred to in Annex III shall not be considered to be high-risk if it does not pose a significant risk of harm to the health, safety or fundamental rights of natural persons, including by not materially influencing the outcome of decision making. An AI system shall not be…",
+                    "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                    "source_type": "legislation",
+                    "article_id": "Article 6(3)",
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "node_id": "AIA_predictive_maintenance_classification",
+                "title": "Guidance on industrial AI system classification",
+                "level": 3,
+                "text": "Industrial AI systems for predictive maintenance: AI systems used for predictive maintenance on industrial machinery and equipment are generally not listed in Annex III. They do not directly affect natural persons in a way that would trigger the high-risk categories. Such systems are safety components only if the machinery itself falls under Union harmonisation legislation requiring third-party conformity assessment (Article 6(1)). Where the AI system only optimises operational efficiency, availability and maintenance scheduling without directly controlling safety functions, it typically falls in the limited or minimal risk category. The key distinction is whether the AI output directly controls safety-critical actuators versus provides recommendations to human operators.",
+                "summary": "Industrial AI systems for predictive maintenance: AI systems used for predictive maintenance on industrial machinery and equipment are generally not listed in Annex III. They do not directly affect natural persons in a way that would trigger the high-risk categories. Such systems are safety componen…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": null,
+                "children": []
+              }
+            ]
+          },
+          {
+            "node_id": "ctr_title_iii_high_risk_ai_systems_chapter_ii_requirements_for_h_a2491912",
+            "title": "Chapter II — Requirements for high-risk AI systems",
+            "level": 2,
+            "text": "",
+            "summary": "Article 9: A risk management system shall be established, implemented, documented and maintained in relation to high-risk AI systems. The risk management system shall be a continuous iterative process run throughout the entire lifecycle of a high-risk AI system, requiring regular systematic review a…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": null,
+            "children": [
+              {
+                "node_id": "AIA_Art9_risk_management",
+                "title": "Article 9 — Risk management system",
+                "level": 3,
+                "text": "Article 9: A risk management system shall be established, implemented, documented and maintained in relation to high-risk AI systems. The risk management system shall be a continuous iterative process run throughout the entire lifecycle of a high-risk AI system, requiring regular systematic review and updating. The risk management system shall consist of: (a) identification and analysis of the known and reasonably foreseeable risks that the high-risk AI system can pose to health, safety or fundamental rights when the high-risk AI system is used in accordance with its intended purpose; (b) estimation and evaluation of the risks that may emerge when the high-risk AI system is used in accordance with its intended purpose and under conditions of reasonably foreseeable misuse; (c) evaluation of other risks possibly arising on the basis of the analysis of data gathered from the post-market monitoring system; (d) adoption of appropriate and targeted risk management measures designed to address the risks identified.",
+                "summary": "Article 9: A risk management system shall be established, implemented, documented and maintained in relation to high-risk AI systems. The risk management system shall be a continuous iterative process run throughout the entire lifecycle of a high-risk AI system, requiring regular systematic review a…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 9",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art10_data_governance",
+                "title": "Article 10 — Data and data governance",
+                "level": 3,
+                "text": "Article 10: High-risk AI systems which make use of techniques involving the training of models with data shall be developed on the basis of training, validation and testing data sets that meet quality criteria in view of the intended purpose. Training, validation and testing data sets shall be subject to data governance and management practices covering: (a) the relevant design choices; (b) data collection processes and the origin of data; (c) relevant data preparation processing operations; (d) formulation of relevant assumptions, notably with respect to the information the data is intended to measure and represent; (e) assessment of the availability, quantity and suitability of the data sets; (f) examination in view of possible biases; (g) the identification of any possible data gaps or shortcomings and how those gaps and shortcomings are addressed.",
+                "summary": "Article 10: High-risk AI systems which make use of techniques involving the training of models with data shall be developed on the basis of training, validation and testing data sets that meet quality criteria in view of the intended purpose. Training, validation and testing data sets shall be subje…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 10",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art11_technical_documentation",
+                "title": "Article 11 — Technical documentation",
+                "level": 3,
+                "text": "Article 11: The technical documentation of a high-risk AI system shall be drawn up before that system is placed on the market or put into service and shall be kept up-to-date. The technical documentation shall be drawn up in such a way as to demonstrate that the high-risk AI system complies with the requirements set out in this Chapter and shall contain, at a minimum, the elements set out in Annex IV. In the case of SMEs, the Commission shall provide guidance on technical documentation requirements. Technical documentation shall include: (a) a general description of the AI system; (b) a detailed description of the elements and of the process for developing the AI system; (c) detailed information about the monitoring, functioning and control of the AI system; (d) a description of the appropriateness of the performance metrics.",
+                "summary": "Article 11: The technical documentation of a high-risk AI system shall be drawn up before that system is placed on the market or put into service and shall be kept up-to-date. The technical documentation shall be drawn up in such a way as to demonstrate that the high-risk AI system complies with the…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 11",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art12_record_keeping",
+                "title": "Article 12 — Record-keeping",
+                "level": 3,
+                "text": "Article 12: High-risk AI systems shall technically allow for the automatic recording of events (logs) over the lifetime of the system. Logging capabilities shall ensure a level of traceability of the AI system's functioning throughout its lifecycle that is appropriate to the intended purpose of the system. In particular, logging capabilities shall enable monitoring of the operation of the high-risk AI system with respect to the occurrence of situations that may result in the AI system presenting a risk to health, safety or fundamental rights, and facilitate post-market monitoring, and the monitoring of the operation of notified bodies.",
+                "summary": "Article 12: High-risk AI systems shall technically allow for the automatic recording of events (logs) over the lifetime of the system. Logging capabilities shall ensure a level of traceability of the AI system's functioning throughout its lifecycle that is appropriate to the intended purpose of the…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 12",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art13_transparency_providers",
+                "title": "Article 13 — Transparency and provision of information to deployers",
+                "level": 3,
+                "text": "Article 13: High-risk AI systems shall be designed and developed in such a way as to ensure that their operation is sufficiently transparent to enable deployers to interpret the system's output and use it appropriately. An appropriate type and degree of transparency shall be ensured with a view to achieving compliance with the obligations of providers and deployers. High-risk AI systems shall be accompanied by instructions for use in an appropriate digital or other format, including information and documentation on: (a) the identity and the contact details of the provider; (b) the characteristics, capabilities and limitations of performance of the high-risk AI system, including information on its intended purpose; (c) the changes to the high-risk AI system and its performance which have been pre-determined by the provider at the moment of the initial conformity assessment, if any; (d) the human oversight measures, including technical measures put in place to facilitate interpretation of the outputs of AI systems by the deployers; (e) the expected lifetime of the high-risk AI system and any necessary maintenance and care measures to ensure the proper functioning.",
+                "summary": "Article 13: High-risk AI systems shall be designed and developed in such a way as to ensure that their operation is sufficiently transparent to enable deployers to interpret the system's output and use it appropriately. An appropriate type and degree of transparency shall be ensured with a view to a…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 13",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art14_human_oversight",
+                "title": "Article 14 — Human oversight",
+                "level": 3,
+                "text": "Article 14: High-risk AI systems shall be designed and developed in such a way, including with appropriate human-machine interface tools, that they can be effectively overseen by natural persons during the period in which the AI system is in use. Human oversight shall aim at preventing or minimising the risks to health, safety or fundamental rights that may emerge when a high-risk AI system is used in accordance with its intended purpose or under conditions of reasonably foreseeable misuse. Natural persons to whom human oversight is assigned shall be enabled to: (a) properly understand the relevant capacities and limitations of the high-risk AI system and be able to duly monitor its operation; (b) remain aware of the possible tendency of automatically relying or over-relying on the output produced by a high-risk AI system ('automation bias'); (c) be able to correctly interpret the high-risk AI system's output, taking into account the characteristics of the tools and methods available; (d) be able to decide, in any particular situation, not to use the high-risk AI system and not to apply its output.",
+                "summary": "Article 14: High-risk AI systems shall be designed and developed in such a way, including with appropriate human-machine interface tools, that they can be effectively overseen by natural persons during the period in which the AI system is in use. Human oversight shall aim at preventing or minimising…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 14",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art15_accuracy_robustness",
+                "title": "Article 15 — Accuracy, robustness and cybersecurity",
+                "level": 3,
+                "text": "Article 15: High-risk AI systems shall be designed and developed in such a way that they achieve, in the light of their intended purpose, an appropriate level of accuracy, robustness and cybersecurity, and perform consistently in those respects throughout their lifecycle. The levels of accuracy and the relevant accuracy metrics of high-risk AI systems shall be declared in the accompanying instructions for use. High-risk AI systems shall be resilient as regards errors, faults or inconsistencies that may occur within the system or the environment in which the system operates, in particular due to their interaction with natural persons or other systems. High-risk AI systems shall be resilient as regards attempts by unauthorised third parties to alter their use, outputs or performance by exploiting system vulnerabilities.",
+                "summary": "Article 15: High-risk AI systems shall be designed and developed in such a way that they achieve, in the light of their intended purpose, an appropriate level of accuracy, robustness and cybersecurity, and perform consistently in those respects throughout their lifecycle. The levels of accuracy and…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 15",
+                "children": []
+              }
+            ]
+          },
+          {
+            "node_id": "ctr_title_iii_high_risk_ai_systems_chapter_iii_obligations_of_pr_8fe7fcf4",
+            "title": "Chapter III — Obligations of providers and deployers of high-risk AI systems",
+            "level": 2,
+            "text": "",
+            "summary": "Article 16: Providers of high-risk AI systems shall take the following actions: (a) ensure that their high-risk AI systems are compliant with the requirements set out in Chapter 2 of this Title; (b) have a quality management system in place; (c) draw up the technical documentation of the high-risk A…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": null,
+            "children": [
+              {
+                "node_id": "AIA_Art16_provider_obligations",
+                "title": "Article 16 — Obligations of providers of high-risk AI systems",
+                "level": 3,
+                "text": "Article 16: Providers of high-risk AI systems shall take the following actions: (a) ensure that their high-risk AI systems are compliant with the requirements set out in Chapter 2 of this Title; (b) have a quality management system in place; (c) draw up the technical documentation of the high-risk AI system; (d) where applicable, follow the relevant conformity assessment procedures; (e) register themselves and their high-risk AI systems in the EU database referred to in Article 71; (f) take the necessary corrective actions and provide information as required pursuant to Article 20; (g) affix the CE marking to their high-risk AI systems to indicate the conformity with this Regulation; (h) demonstrate, upon request by a national competent authority, the conformity of the high-risk AI system with the requirements set out in Chapter 2 of this Title; (i) ensure that the AI system undergoes the relevant conformity assessment procedure prior to its being placed on the market or put into service.",
+                "summary": "Article 16: Providers of high-risk AI systems shall take the following actions: (a) ensure that their high-risk AI systems are compliant with the requirements set out in Chapter 2 of this Title; (b) have a quality management system in place; (c) draw up the technical documentation of the high-risk A…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 16",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art17_quality_management",
+                "title": "Article 17 — Quality management system",
+                "level": 3,
+                "text": "Article 17: Providers of high-risk AI systems shall put a quality management system in place that ensures compliance with this Regulation. The quality management system shall be documented in a systematic and orderly manner in the form of written policies, procedures and instructions, and shall include at least the following aspects: (a) a strategy for regulatory compliance, including compliance with conformity assessment procedures and procedures for the management of modifications to the high-risk AI system; (b) techniques, procedures and systematic actions to be used for the design, design control and design verification of the high-risk AI system; (c) techniques, procedures and systematic actions to be used for the development, quality control and quality assurance of the high-risk AI system; (d) examination, test and validation procedures to be carried out before, during and after the development of the high-risk AI system and the frequency with which they have to be carried out; (e) technical specifications, including standards, to be applied and the extent to which such standards will be applied; (f) systems and procedures for data management, including data collection, data analysis, data labelling, data storage, data filtration, data mining, data aggregation, data retention.",
+                "summary": "Article 17: Providers of high-risk AI systems shall put a quality management system in place that ensures compliance with this Regulation. The quality management system shall be documented in a systematic and orderly manner in the form of written policies, procedures and instructions, and shall incl…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 17",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art25_responsibilities_value_chain",
+                "title": "Article 25 — Responsibilities along the AI value chain",
+                "level": 3,
+                "text": "Article 25: Any distributor, importer, deployer or other third-party shall be considered to be a provider of a high-risk AI system for the purposes of this Regulation and shall be subject to the obligations of the provider where that party: (a) places on the market or puts into service a high-risk AI system under its own name or trademark; (b) modifies the intended purpose of a high-risk AI system already placed on the market or put into service; (c) makes a substantial modification to the high-risk AI system. Any person who makes a substantial modification to a high-risk AI system shall be considered to be the provider for the purposes of this Regulation. Where a high-risk AI system has been developed by a public authority it may consider itself provider for the purposes of this Regulation.",
+                "summary": "Article 25: Any distributor, importer, deployer or other third-party shall be considered to be a provider of a high-risk AI system for the purposes of this Regulation and shall be subject to the obligations of the provider where that party: (a) places on the market or puts into service a high-risk A…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 25",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art26_deployer_obligations",
+                "title": "Article 26 — Obligations of deployers of high-risk AI systems",
+                "level": 3,
+                "text": "Article 26: Deployers of high-risk AI systems shall take appropriate technical and organisational measures to ensure they use such systems in accordance with the instructions for use accompanying the systems. Deployers shall assign human oversight to natural persons who have the necessary competence, training and authority. Deployers shall monitor the operation of the high-risk AI system on the basis of the instructions for use and, where relevant, inform providers pursuant to Article 72. Deployers shall keep logs automatically generated by the high-risk AI system for a period that is appropriate in the light of the applicable legal obligations. Deployers shall take appropriate measures to ensure that natural persons to whom the use of high-risk AI systems has a material impact are informed of the use of such AI systems. Deployers shall carry out a fundamental rights impact assessment prior to putting into service or using a high-risk AI system.",
+                "summary": "Article 26: Deployers of high-risk AI systems shall take appropriate technical and organisational measures to ensure they use such systems in accordance with the instructions for use accompanying the systems. Deployers shall assign human oversight to natural persons who have the necessary competence…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 26",
+                "children": []
+              },
+              {
+                "node_id": "AIA_fundamental_rights_impact_assessment",
+                "title": "Article 27 — Fundamental rights impact assessment for high-risk AI systems",
+                "level": 3,
+                "text": "Article 27: Prior to deploying a high-risk AI system listed in Annex III, deployers that are bodies governed by public law, or private entities providing public services, and deployers of AI systems in areas of credit scoring, insurance risk and life insurance shall carry out a fundamental rights impact assessment. The assessment shall cover: (a) a description of the deployer's processes in which the high-risk AI system will be used in line with its intended purpose; (b) a description of the period of time and frequency in which the high-risk AI system is intended to be used; (c) the categories of natural persons and groups likely to be affected by its use in the specific context; (d) the specific risks of harm likely to impact the categories of persons or group of persons identified, taking into account information given by the provider pursuant to Article 13; (e) a description of the implementation of human oversight measures; (f) the measures to be taken in case the risks materialise.",
+                "summary": "Article 27: Prior to deploying a high-risk AI system listed in Annex III, deployers that are bodies governed by public law, or private entities providing public services, and deployers of AI systems in areas of credit scoring, insurance risk and life insurance shall carry out a fundamental rights im…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 27",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art26_deployer_fundamental_rights",
+                "title": "Article 26(9) — Deployer notification to workers",
+                "level": 3,
+                "text": "Article 26(7)(8)(9): Deployers shall notify affected workers or their representatives, in accordance with applicable Union and national law, of the use of high-risk AI systems in the workplace. Where a high-risk AI system is used in a way that makes individual decisions affecting natural persons, the deployer shall inform those natural persons that they are subject to the use of the high-risk AI system, upon request and where the AI system has a legal or similarly significant effect on natural persons.",
+                "summary": "Article 26(7)(8)(9): Deployers shall notify affected workers or their representatives, in accordance with applicable Union and national law, of the use of high-risk AI systems in the workplace. Where a high-risk AI system is used in a way that makes individual decisions affecting natural persons, th…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 26(9)",
+                "children": []
+              }
+            ]
+          },
+          {
+            "node_id": "ctr_title_iii_high_risk_ai_systems_chapter_iv_notified_bodies_551af7ff",
+            "title": "Chapter IV — Notified bodies",
+            "level": 2,
+            "text": "",
+            "summary": "Article 43: For high-risk AI systems listed in Annex III, the conformity assessment shall be carried out as follows: (a) the conformity assessment procedure based on internal control referred to in Annex VI; or (b) the conformity assessment procedure based on assessment of the quality management sys…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": null,
+            "children": [
+              {
+                "node_id": "AIA_Art43_conformity_assessment",
+                "title": "Article 43 — Conformity assessment",
+                "level": 3,
+                "text": "Article 43: For high-risk AI systems listed in Annex III, the conformity assessment shall be carried out as follows: (a) the conformity assessment procedure based on internal control referred to in Annex VI; or (b) the conformity assessment procedure based on assessment of the quality management system and assessment of the technical documentation, with the involvement of a notified body, referred to in Annex VII. The choice of the conformity assessment procedure shall be made by the provider. For high-risk AI systems referred to in point 1(a) of Annex III, if the biometric categorisation system is intended to be used for purposes other than the verification or identification of natural persons, the provider shall use the conformity assessment procedure referred to in Annex VII.",
+                "summary": "Article 43: For high-risk AI systems listed in Annex III, the conformity assessment shall be carried out as follows: (a) the conformity assessment procedure based on internal control referred to in Annex VI; or (b) the conformity assessment procedure based on assessment of the quality management sys…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 43",
+                "children": []
+              }
+            ]
+          },
+          {
+            "node_id": "ctr_title_iii_high_risk_ai_systems_chapter_iv_ce_marking_f036a959",
+            "title": "Chapter IV — CE marking",
+            "level": 2,
+            "text": "",
+            "summary": "Article 48: The CE marking shall be subject to the general principles set out in Regulation (EC) No 765/2008. The CE marking shall be affixed visibly, legibly and indelibly to the high-risk AI system. Where that is not possible or not warranted on account of the nature of the high-risk AI system, it…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": null,
+            "children": [
+              {
+                "node_id": "AIA_CE_marking",
+                "title": "Article 48 — CE marking",
+                "level": 3,
+                "text": "Article 48: The CE marking shall be subject to the general principles set out in Regulation (EC) No 765/2008. The CE marking shall be affixed visibly, legibly and indelibly to the high-risk AI system. Where that is not possible or not warranted on account of the nature of the high-risk AI system, it shall be affixed to the packaging or to the accompanying documentation. The CE marking shall be affixed only by the provider, or by the authorised representative of the provider, before the high-risk AI system is placed on the market or put into service.",
+                "summary": "Article 48: The CE marking shall be subject to the general principles set out in Regulation (EC) No 765/2008. The CE marking shall be affixed visibly, legibly and indelibly to the high-risk AI system. Where that is not possible or not warranted on account of the nature of the high-risk AI system, it…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 48",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "node_id": "ctr_annex_iii_high_risk_ai_systems_14ca5cb8",
+        "title": "Annex III — High-Risk AI Systems",
+        "level": 1,
+        "text": "",
+        "summary": "Annex III, Point 1: AI systems intended to be used for the real-time and post remote biometric identification of natural persons; AI systems intended to be used for the categorisation of natural persons based on their biometric data in order to deduce or infer their race, political opinions, trade u…",
+        "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+        "source_type": "legislation",
+        "article_id": "Annex III",
+        "children": [
+          {
+            "node_id": "AIA_AnnexIII_1_biometric",
+            "title": "1. Biometric identification and categorisation of natural persons",
+            "level": 2,
+            "text": "Annex III, Point 1: AI systems intended to be used for the real-time and post remote biometric identification of natural persons; AI systems intended to be used for the categorisation of natural persons based on their biometric data in order to deduce or infer their race, political opinions, trade union membership, religious or philosophical beliefs, sex life or sexual orientation; AI systems intended to be used for emotion recognition in natural persons.",
+            "summary": "Annex III, Point 1: AI systems intended to be used for the real-time and post remote biometric identification of natural persons; AI systems intended to be used for the categorisation of natural persons based on their biometric data in order to deduce or infer their race, political opinions, trade u…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Annex III",
+            "children": []
+          },
+          {
+            "node_id": "AIA_AnnexIII_2_critical_infrastructure",
+            "title": "2. Critical infrastructure",
+            "level": 2,
+            "text": "Annex III, Point 2: AI systems intended to be used as safety components in the management and operation of critical digital infrastructure as listed in the Annex of Directive (EU) 2022/2557, road traffic, and the supply of water, gas, heating and electricity.",
+            "summary": "Annex III, Point 2: AI systems intended to be used as safety components in the management and operation of critical digital infrastructure as listed in the Annex of Directive (EU) 2022/2557, road traffic, and the supply of water, gas, heating and electricity.",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Annex III",
+            "children": []
+          },
+          {
+            "node_id": "AIA_AnnexIII_3_education",
+            "title": "3. Education and vocational training",
+            "level": 2,
+            "text": "Annex III, Point 3: AI systems intended to be used for the purpose of determining access or admission or assigning natural persons to educational and vocational training institutions or programmes at all levels; AI systems intended to be used for the purpose of assessing learning outcomes, including when those outcomes are used to steer the learning process of natural persons in educational and vocational training institutions or programmes at all levels; AI systems intended to be used for the purpose of assessing the appropriate level of education that an individual will receive or will be able to access, in the context of or within educational and vocational training institutions; AI systems intended to be used for monitoring and detecting prohibited behaviour of students during tests in the context of or within educational institutions.",
+            "summary": "Annex III, Point 3: AI systems intended to be used for the purpose of determining access or admission or assigning natural persons to educational and vocational training institutions or programmes at all levels; AI systems intended to be used for the purpose of assessing learning outcomes, including…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Annex III",
+            "children": []
+          },
+          {
+            "node_id": "AIA_AnnexIII_4_employment",
+            "title": "4. Employment, workers management and access to self-employment",
+            "level": 2,
+            "text": "Annex III, Point 4: AI systems intended to be used for recruitment or selection of natural persons, notably for advertising vacancies, screening or filtering applications, evaluating candidates in the course of interviews or tests; AI systems intended to be used for making decisions on promotion and termination of work-related contractual relationships, for task allocation and for monitoring and evaluating performance and behaviour of persons in such relationships.",
+            "summary": "Annex III, Point 4 detailed scope: AI systems used in employment contexts that monitor worker behaviour, performance, or location may be high-risk if used for making or informing decisions about employment, such as termination, task allocation, performance evaluation, or promotion. However, AI syste…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Annex III",
+            "children": [
+              {
+                "node_id": "AIA_employment_monitoring_classification",
+                "title": "Guidance on employment AI monitoring",
+                "level": 3,
+                "text": "Annex III, Point 4 detailed scope: AI systems used in employment contexts that monitor worker behaviour, performance, or location may be high-risk if used for making or informing decisions about employment, such as termination, task allocation, performance evaluation, or promotion. However, AI systems that only monitor machinery or equipment performance without directly evaluating individual worker behaviour or performance are not covered under Annex III Point 4. The key factor is whether the AI system produces outputs that inform or make decisions about individual natural persons in an employment context.",
+                "summary": "Annex III, Point 4 detailed scope: AI systems used in employment contexts that monitor worker behaviour, performance, or location may be high-risk if used for making or informing decisions about employment, such as termination, task allocation, performance evaluation, or promotion. However, AI syste…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Annex III",
+                "children": []
+              }
+            ]
+          },
+          {
+            "node_id": "AIA_AnnexIII_5_essential_services",
+            "title": "5. Access to and enjoyment of essential private services and essential public services and benefits",
+            "level": 2,
+            "text": "Annex III, Point 5: AI systems intended to be used by public authorities or on behalf of public authorities to evaluate the eligibility of natural persons for essential public assistance benefits and services, including healthcare services, as well as to grant, reduce, revoke, or reclaim such benefits and services; AI systems intended to be used to evaluate the creditworthiness of natural persons or establish their credit score, with the exception of AI systems used for the purpose of detecting financial fraud; AI systems intended to be used for risk assessment and pricing in relation to natural persons in the case of life and health insurance.",
+            "summary": "Annex III, Point 5: AI systems intended to be used by public authorities or on behalf of public authorities to evaluate the eligibility of natural persons for essential public assistance benefits and services, including healthcare services, as well as to grant, reduce, revoke, or reclaim such benefi…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Annex III",
+            "children": []
+          },
+          {
+            "node_id": "AIA_AnnexIII_6_law_enforcement",
+            "title": "6. Law enforcement",
+            "level": 2,
+            "text": "Annex III, Point 6: AI systems intended to be used by or on behalf of competent authorities, or by Union institutions, bodies, offices or agencies in support of competent authorities or by institutions of the Union for the purposes of making or assisting in making individual risk assessments of natural persons in order to assess the risk of a natural person for offending or reoffending or the risk for potential victims of criminal offences; AI systems intended to be used as polygraphs and similar tools or to assess the reliability of evidence in the course of investigation or prosecution of criminal offences; AI systems intended to be used to predict the occurrence or reoccurrence of an actual or potential criminal offence based on profiling of natural persons; AI systems intended to be used in the course of detection, investigation or prosecution of criminal offences for analysis of deep fake content.",
+            "summary": "Annex III, Point 6: AI systems intended to be used by or on behalf of competent authorities, or by Union institutions, bodies, offices or agencies in support of competent authorities or by institutions of the Union for the purposes of making or assisting in making individual risk assessments of natu…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Annex III",
+            "children": []
+          },
+          {
+            "node_id": "AIA_AnnexIII_7_migration",
+            "title": "7. Migration, asylum and border control management",
+            "level": 2,
+            "text": "Annex III, Point 7: AI systems intended to be used by competent public authorities as polygraphs and similar tools or to assess the reliability of evidence in the course of investigation or prosecution of criminal offences; AI systems intended to be used by competent public authorities or by Union institutions, bodies, offices or agencies, in the context of migration, asylum and border control, for the purposes of risk assessments of natural persons; AI systems intended to be used for the examination of applications for asylum, visa and residence permits and associated complaints; AI systems intended to be used for the purpose of detecting, recognising or identifying natural persons in the context of migration, asylum and border control management.",
+            "summary": "Annex III, Point 7: AI systems intended to be used by competent public authorities as polygraphs and similar tools or to assess the reliability of evidence in the course of investigation or prosecution of criminal offences; AI systems intended to be used by competent public authorities or by Union i…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Annex III",
+            "children": []
+          },
+          {
+            "node_id": "AIA_AnnexIII_8_justice",
+            "title": "8. Administration of justice and democratic processes",
+            "level": 2,
+            "text": "Annex III, Point 8: AI systems intended to be used by a judicial authority or on its behalf to research and interpret facts and the law and to apply the law to a concrete set of facts, or to be used in a similar way in alternative dispute resolution; AI systems intended to be used to influence the outcome of an election or referendum or the voting behaviour of natural persons in the exercise of their vote in elections or referenda.",
+            "summary": "Annex III, Point 8: AI systems intended to be used by a judicial authority or on its behalf to research and interpret facts and the law and to apply the law to a concrete set of facts, or to be used in a similar way in alternative dispute resolution; AI systems intended to be used to influence the o…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Annex III",
+            "children": []
+          }
+        ]
+      },
+      {
+        "node_id": "ctr_title_iv_transparency_obligations_for_certain_ai_systems_3a909a7d",
+        "title": "Title IV — Transparency obligations for certain AI systems",
+        "level": 1,
+        "text": "",
+        "summary": "Article 50: Providers shall ensure that AI systems intended to interact directly with natural persons are designed and developed in such a way that the natural persons concerned are informed that they are interacting with an AI system, unless this is obvious from the context. Providers of AI systems…",
+        "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+        "source_type": "legislation",
+        "article_id": null,
+        "children": [
+          {
+            "node_id": "AIA_Art50_transparency_obligations_certain_ai",
+            "title": "Article 50 — Transparency obligations for providers and deployers of certain AI systems",
+            "level": 2,
+            "text": "Article 50: Providers shall ensure that AI systems intended to interact directly with natural persons are designed and developed in such a way that the natural persons concerned are informed that they are interacting with an AI system, unless this is obvious from the context. Providers of AI systems, including general-purpose AI systems, generating synthetic audio, image, video or text content, shall ensure that the outputs of the AI system are marked in a machine-readable format and detectable as artificially generated or manipulated. Deployers of an emotion recognition system or a biometric categorisation system shall inform the natural persons exposed thereto of the operation of the system, and shall process the personal data in accordance with Regulations (EU) 2016/679 and (EU) 2018/1725 and Directive (EU) 2016/680. Deployers who use an AI system to generate or manipulate image, audio or video content constituting a deep fake shall disclose that the content has been artificially generated or manipulated.",
+            "summary": "Article 50: Providers shall ensure that AI systems intended to interact directly with natural persons are designed and developed in such a way that the natural persons concerned are informed that they are interacting with an AI system, unless this is obvious from the context. Providers of AI systems…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Article 50",
+            "children": []
+          },
+          {
+            "node_id": "AIA_Art95_limited_risk_labelling",
+            "title": "Article 50 — Transparency obligations — Labelling and disclosure requirements",
+            "level": 2,
+            "text": "Transparency obligations for AI-generated content: AI systems that generate synthetic content (text, images, audio, video) must mark outputs in machine-readable format. AI systems interacting with humans must clearly disclose their AI nature. Deep fake content must be explicitly disclosed as artificially generated. Emotion recognition and biometric categorisation systems must inform exposed persons. These requirements apply regardless of whether the AI system is also high-risk under Annex III.",
+            "summary": "Transparency obligations for AI-generated content: AI systems that generate synthetic content (text, images, audio, video) must mark outputs in machine-readable format. AI systems interacting with humans must clearly disclose their AI nature. Deep fake content must be explicitly disclosed as artific…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Article 50",
+            "children": []
+          },
+          {
+            "node_id": "AIA_limited_risk_chatbots",
+            "title": "Article 50 — Transparency obligations — Limited-risk AI systems",
+            "level": 2,
+            "text": "Limited-risk AI systems: AI systems intended to interact directly with natural persons (e.g. chatbots, AI-generated content systems) have transparency obligations but are not subject to the full requirements for high-risk AI systems. The provider must ensure users are informed they are interacting with an AI system. Deployers must not suppress or override AI disclosure requirements. The obligation to disclose exists regardless of whether the AI system would otherwise be classified as high-risk.",
+            "summary": "Limited-risk AI systems: AI systems intended to interact directly with natural persons (e.g. chatbots, AI-generated content systems) have transparency obligations but are not subject to the full requirements for high-risk AI systems. The provider must ensure users are informed they are interacting w…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Article 50",
+            "children": []
+          }
+        ]
+      },
+      {
+        "node_id": "ctr_title_viii_general_purpose_ai_models_a144ca86",
+        "title": "Title VIII — General-Purpose AI Models",
+        "level": 1,
+        "text": "",
+        "summary": "Article 51: A general-purpose AI model shall be classified as a general-purpose AI model with systemic risk if it meets any of the following conditions: (a) it has high impact capabilities evaluated on the basis of appropriate technical tools and methodologies, including indicators and benchmarks; (…",
+        "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+        "source_type": "legislation",
+        "article_id": null,
+        "children": [
+          {
+            "node_id": "ctr_title_viii_general_purpose_ai_models_chapter_i_classificatio_6e6e4a7d",
+            "title": "Chapter I — Classification of general-purpose AI models",
+            "level": 2,
+            "text": "",
+            "summary": "Article 51: A general-purpose AI model shall be classified as a general-purpose AI model with systemic risk if it meets any of the following conditions: (a) it has high impact capabilities evaluated on the basis of appropriate technical tools and methodologies, including indicators and benchmarks; (…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": null,
+            "children": [
+              {
+                "node_id": "AIA_Art51_GPAI_model_registration",
+                "title": "Article 51 — Classification of general-purpose AI models as general-purpose AI models with systemic risk",
+                "level": 3,
+                "text": "Article 51: A general-purpose AI model shall be classified as a general-purpose AI model with systemic risk if it meets any of the following conditions: (a) it has high impact capabilities evaluated on the basis of appropriate technical tools and methodologies, including indicators and benchmarks; (b) based on a decision of the Commission, ex officio or following a qualified alert from the scientific panel, it has capabilities or an impact equivalent to those set out in point (a). A general-purpose AI model shall be presumed to have high impact capabilities pursuant to point (a) of paragraph 1 when the cumulative amount of compute used for its training measured in floating point operations is greater than 10^25.",
+                "summary": "Article 51: A general-purpose AI model shall be classified as a general-purpose AI model with systemic risk if it meets any of the following conditions: (a) it has high impact capabilities evaluated on the basis of appropriate technical tools and methodologies, including indicators and benchmarks; (…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 51",
+                "children": []
+              }
+            ]
+          },
+          {
+            "node_id": "ctr_title_viii_general_purpose_ai_models_chapter_ii_obligations_41795459",
+            "title": "Chapter II — Obligations for providers of general-purpose AI models",
+            "level": 2,
+            "text": "",
+            "summary": "Article 52: Providers of general-purpose AI models shall draw up and keep up-to-date the technical documentation of the model, including its training process and the data used for its training evaluation, in particular a general description of the data used for training, validation and testing, wher…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": null,
+            "children": [
+              {
+                "node_id": "AIA_Art52_GPAI_model_obligations",
+                "title": "Article 52 — Obligations of providers of general-purpose AI models",
+                "level": 3,
+                "text": "Article 52: Providers of general-purpose AI models shall draw up and keep up-to-date the technical documentation of the model, including its training process and the data used for its training evaluation, in particular a general description of the data used for training, validation and testing, where applicable. Providers shall make available information and documentation to providers of AI systems who intend to integrate the general-purpose AI model into their AI systems. Providers shall put in place a policy to comply with Union copyright law. Providers shall publish a sufficiently detailed summary about the content used for training of the general-purpose AI model.",
+                "summary": "Article 52: Providers of general-purpose AI models shall draw up and keep up-to-date the technical documentation of the model, including its training process and the data used for its training evaluation, in particular a general description of the data used for training, validation and testing, wher…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 52",
+                "children": []
+              },
+              {
+                "node_id": "AIA_Art53_GPAI_systemic_risk_obligations",
+                "title": "Article 53 — Obligations of providers of general-purpose AI models with systemic risk",
+                "level": 3,
+                "text": "Article 53: In addition to the obligations listed in Article 52, providers of general-purpose AI models with systemic risk shall: (a) perform model evaluation in accordance with standardised protocols and tools reflecting the state of the art, including conducting and documenting adversarial testing of the model with a view to identifying and mitigating systemic risk; (b) assess and mitigate possible systemic risks at Union level, including their sources, that may stem from the development, the placing on the market, or the use of general-purpose AI models with systemic risk; (c) keep track of, document and report, without undue delay, to the AI Office and, where relevant, to national competent authorities, relevant information about serious incidents and possible corrective measures to address them; (d) ensure an adequate level of cybersecurity protection for the general-purpose AI model with systemic risk and the physical infrastructure of the model.",
+                "summary": "Article 53: In addition to the obligations listed in Article 52, providers of general-purpose AI models with systemic risk shall: (a) perform model evaluation in accordance with standardised protocols and tools reflecting the state of the art, including conducting and documenting adversarial testing…",
+                "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+                "source_type": "legislation",
+                "article_id": "Article 53",
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "node_id": "ctr_title_ix_post_market_monitoring_information_sharing_and_mark_6ef1e354",
+        "title": "Title IX — Post-market monitoring, information sharing and market surveillance",
+        "level": 1,
+        "text": "",
+        "summary": "Article 61: Providers shall establish and document a post-market monitoring system in a manner that is proportionate to the nature of the AI technologies and the risks of the high-risk AI system. The post-market monitoring system shall actively and systematically collect, document and analyse releva…",
+        "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+        "source_type": "legislation",
+        "article_id": null,
+        "children": [
+          {
+            "node_id": "AIA_Art61_post_market_monitoring",
+            "title": "Article 61 — Post-market monitoring by providers and post-market monitoring plan for high-risk AI systems",
+            "level": 2,
+            "text": "Article 61: Providers shall establish and document a post-market monitoring system in a manner that is proportionate to the nature of the AI technologies and the risks of the high-risk AI system. The post-market monitoring system shall actively and systematically collect, document and analyse relevant data that may be provided by deployers or that may be collected through other sources on the performance of high-risk AI systems throughout their lifetime, and that allow the provider to evaluate the continuous compliance of AI systems with the requirements of this Regulation. Where relevant, post-market monitoring shall include an analysis of the interaction with other AI systems. This obligation shall not cover sensitive operational data of deployers who are law enforcement authorities.",
+            "summary": "Article 61: Providers shall establish and document a post-market monitoring system in a manner that is proportionate to the nature of the AI technologies and the risks of the high-risk AI system. The post-market monitoring system shall actively and systematically collect, document and analyse releva…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Article 61",
+            "children": []
+          },
+          {
+            "node_id": "AIA_Art62_incident_reporting",
+            "title": "Article 62 — Reporting of serious incidents for high-risk AI systems",
+            "level": 2,
+            "text": "Article 62: Providers of high-risk AI systems placed on the Union market shall report any serious incident to the market surveillance authorities of the Member States where that incident occurred. Such notification shall be made immediately after the provider has established a causal link between the AI system and the serious incident or the reasonable likelihood of such a link, and, in any event, not later than 15 days after the providers becomes aware of the serious incident.",
+            "summary": "Article 62: Providers of high-risk AI systems placed on the Union market shall report any serious incident to the market surveillance authorities of the Member States where that incident occurred. Such notification shall be made immediately after the provider has established a causal link between th…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Article 62",
+            "children": []
+          }
+        ]
+      },
+      {
+        "node_id": "ctr_title_viii_eu_database_for_high_risk_ai_systems_4d55c2fa",
+        "title": "Title VIII — EU database for high-risk AI systems",
+        "level": 1,
+        "text": "",
+        "summary": "Article 71: The Commission shall establish and maintain an EU-wide database containing information on high-risk AI systems referred to in Article 6(2) that are registered in accordance with Article 49. The database shall be publicly accessible and shall allow users to perform searches and retrieve r…",
+        "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+        "source_type": "legislation",
+        "article_id": null,
+        "children": [
+          {
+            "node_id": "AIA_Art71_EU_database",
+            "title": "Article 71 — EU database for high-risk AI systems other than those referred to in Article 6(1)",
+            "level": 2,
+            "text": "Article 71: The Commission shall establish and maintain an EU-wide database containing information on high-risk AI systems referred to in Article 6(2) that are registered in accordance with Article 49. The database shall be publicly accessible and shall allow users to perform searches and retrieve relevant information. Before putting into service or placing on the market a high-risk AI system listed in Annex III, providers of such systems, or, where applicable, deployers, shall register themselves and their systems in the EU database.",
+            "summary": "Article 71: The Commission shall establish and maintain an EU-wide database containing information on high-risk AI systems referred to in Article 6(2) that are registered in accordance with Article 49. The database shall be publicly accessible and shall allow users to perform searches and retrieve r…",
+            "document_source": "EU_AI_Act_Regulation_2024_1689.pdf",
+            "source_type": "legislation",
+            "article_id": "Article 71",
+            "children": []
+          }
+        ]
+      }
+    ]
+  }
+}
