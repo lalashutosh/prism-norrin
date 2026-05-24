@@ -19,6 +19,10 @@ INTELLIGENCE — pure functions, no I/O, fully testable without API calls
 ══════════════════════════════════════════════════════════════════════════════
 ORCHESTRATION — coordinates calls, manages state, emits signals
 ══════════════════════════════════════════════════════════════════════════════
+  _assess_dimension_augmented(facts, aug_ctx, dim, context, client)
+      -> (dim_id, DimensionFinding)                    [thread-safe worker]
+  _run_parallel_dimensions(memory, facts, aug_ctx, dims, context, client)
+      -> None                      [fans out workers, writes sequentially]
   _is_dimension_done(memory, dimension_id) -> bool
   _write_dimension(memory, dimension_id, finding) -> None
   _filter_chunks_for_dimension(chunks, dimension_id) -> list[Chunk]
@@ -29,8 +33,17 @@ ORCHESTRATION — coordinates calls, manages state, emits signals
 from __future__ import annotations
 
 import json
+import logging
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Optional, Union
+
+logger = logging.getLogger(__name__)
+
+# Maximum concurrent LLM calls during parallel dimension assessment.
+# All 6 dimensions are structurally independent when the augmentation layer
+# has pre-fetched their legal context, so the ceiling is 6.
+_PARALLEL_WORKERS = 6
 
 from core.types import (
     AugmentedContext,
@@ -532,6 +545,92 @@ def _call_llm(prompt: str, system: str, client: Any) -> str:
     return response.content[0].text
 
 
+# ── Parallel assessment helpers ───────────────────────────────────────────────
+
+def _assess_dimension_augmented(
+    facts: FactSection,
+    aug_ctx: AugmentedContext,
+    dimension_id: str,
+    refined_context: str,
+    llm_client: Any,
+) -> tuple[str, DimensionFinding]:
+    """Run the full LLM assessment for one dimension. Called from a thread.
+
+    THREAD-SAFE CONTRACT
+    ────────────────────
+    Reads only:
+      aug_ctx.mappings_by_dimension, aug_ctx.user_chunks — set once during
+      augmentation, never modified during analysis.
+      facts — written once by extraction agent; immutable by this point.
+
+    Writes only:
+      Its own local variables (prompt, raw_response, finding).
+      No SessionMemory fields, no global state.
+
+    SQLite (log_reasoning decorator):
+      PrismLogger → LogStore._write_lock serialises concurrent writes so
+      the decorator can fire safely from multiple threads simultaneously.
+
+    Returns (dimension_id, finding) — the main thread uses dimension_id to
+    identify which slot to write after the pool joins.
+    """
+    aug_chunks = build_dimension_chunks(aug_ctx, dimension_id)
+    prompt = build_dimension_prompt(
+        facts, aug_chunks, dimension_id, refined_context,
+        augmented_context=aug_ctx,
+    )
+    _logged_llm = log_reasoning(agent="analysis", dimension=dimension_id)(_call_llm)
+    raw_response = _logged_llm(prompt, ANALYSIS_SYSTEM_PROMPT, llm_client)
+    finding = parse_dimension_response(raw_response, dimension_id)
+    return dimension_id, finding
+
+
+def _run_parallel_dimensions(
+    memory: "AnalysisAgentMemoryView",
+    facts: FactSection,
+    aug_ctx: AugmentedContext,
+    parallel_dims: list[str],
+    refined_context: str,
+    llm_client: Any,
+) -> None:
+    """Fan out LLM calls for *parallel_dims*, then write results sequentially.
+
+    The ThreadPoolExecutor runs _assess_dimension_augmented concurrently for
+    every dimension in *parallel_dims*.  Workers are pure — they only read
+    shared data and call the LLM; no SessionMemory writes happen inside threads.
+
+    After the pool joins, findings are written to memory in DIMENSION_ORDER so
+    the state_change log reflects a deterministic write sequence regardless of
+    which thread finished first.
+    """
+    results: dict[str, DimensionFinding] = {}
+
+    with ThreadPoolExecutor(max_workers=min(len(parallel_dims), _PARALLEL_WORKERS)) as pool:
+        future_to_dim: dict = {
+            pool.submit(
+                _assess_dimension_augmented,
+                facts, aug_ctx, dim_id, refined_context, llm_client,
+            ): dim_id
+            for dim_id in parallel_dims
+        }
+        for future in as_completed(future_to_dim):
+            dim_id = future_to_dim[future]
+            try:
+                _, finding = future.result()
+            except Exception as exc:   # noqa: BLE001
+                logger.warning(
+                    "Parallel dimension assessment failed for '%s': %s — "
+                    "writing INSUFFICIENT finding.",
+                    dim_id, exc,
+                )
+                finding = _make_insufficient_finding(dim_id)
+            results[dim_id] = finding
+
+    # Write in DIMENSION_ORDER — deterministic sequence for audit logs.
+    for dim_id in parallel_dims:
+        _write_dimension(memory, dim_id, results[dim_id])
+
+
 def run_analysis_agent(
     memory: AnalysisAgentMemoryView,
     chunks: list[Chunk],
@@ -585,44 +684,48 @@ def run_analysis_agent(
     refined_context: str        = context.get("refined_context", "")
     aug_ctx: Optional[AugmentedContext] = memory.augmented_context
 
+    # ── Augmented parallel path ──────────────────────────────────────────────
+    # When the augmentation layer has pre-fetched dimension-specific legal
+    # chunks, all 6 dimensions are structurally independent: each prompt is
+    # built from (facts, aug_chunks_for_dim, refined_context) and writes to
+    # its own memory slot.  Fan them out to a ThreadPoolExecutor.
+    #
+    # Thread-safety:
+    #   Workers read aug_ctx and facts (immutable at this point) and call the
+    #   LLM (stateless HTTP).  No SessionMemory writes happen inside threads.
+    #   log_reasoning → LogStore._write_lock serialises SQLite reasoning logs.
+    #   _write_dimension calls happen in the main thread after the pool joins.
+    if aug_ctx is not None:
+        parallel_dims = [
+            d for d in DIMENSION_ORDER
+            if not _is_dimension_done(memory, d)
+            and bool(build_dimension_chunks(aug_ctx, d))
+        ]
+        if parallel_dims:
+            _run_parallel_dimensions(
+                memory, facts, aug_ctx, parallel_dims, refined_context, llm_client,
+            )
+        # If all 6 are covered, we're done.
+        if all(_is_dimension_done(memory, d) for d in DIMENSION_ORDER):
+            return CompletionSignal(agent="analysis", message="All six dimensions assessed.")
+        # Rare: some dimensions had no augmentation coverage — fall through to
+        # the sequential legacy path for the remaining ones only.
+
+    # ── Legacy sequential path ───────────────────────────────────────────────
+    # Used when aug_ctx is absent (test injection / no session_id) or when a
+    # dimension returned no augmented chunks (should not happen in production
+    # but handled gracefully).  Preserves the full RetrievalSignal mechanism.
     for dimension_id in DIMENSION_ORDER:
-        # Resume detection — skip already-written sections.
         if _is_dimension_done(memory, dimension_id):
             continue
 
-        if aug_ctx is not None:
-            # ── Augmented path ───────────────────────────────────────────────
-            # The augmentation layer pre-fetched the right legal chunks for
-            # this dimension with the correct source_type filter (no Article 5
-            # dilution).  Use these as the primary evidence source.
-            # User-doc chunks are embedded in the serialised augmented context
-            # so agents can cite them directly as FACT claims.
-            aug_chunks = build_dimension_chunks(aug_ctx, dimension_id)
-            # Check sufficiency; if the augmented context has authoritative
-            # chunks we proceed even without a RetrievalSignal cycle.
-            if aug_chunks:
-                prompt = build_dimension_prompt(
-                    facts, aug_chunks, dimension_id, refined_context,
-                    augmented_context=aug_ctx,
-                )
-                _logged_llm = log_reasoning(agent="analysis", dimension=dimension_id)(_call_llm)
-                response_text = _logged_llm(prompt, ANALYSIS_SYSTEM_PROMPT, llm_client)
-                finding = parse_dimension_response(response_text, dimension_id)
-                _write_dimension(memory, dimension_id, finding)
-                continue
-
-            # Augmentation returned nothing for this dimension — fall through
-            # to the legacy retrieval path below.
-
-        # ── Legacy retrieval path (no augmented context, or empty for dim) ───
         relevant_chunks = _filter_chunks_for_dimension(chunks, dimension_id)
         sufficient, reason = check_evidence_sufficiency(relevant_chunks, dimension_id)
 
         if not sufficient and dimension_id not in max_reached:
-            # Returning here exits run_analysis_agent immediately.  The orchestrator
-            # will fetch more chunks, then call run_analysis_agent again from the top.
-            # The resume check at the start of the loop ensures already-written
-            # dimensions are skipped so work is never duplicated.
+            # Exit the agent; orchestrator fetches more chunks and re-invokes.
+            # _is_dimension_done at loop start ensures already-written dims are
+            # skipped on re-entry so no work is duplicated.
             query, filters = formulate_retrieval_query(dimension_id, facts, chunks)
             return RetrievalSignal(
                 query=query,
@@ -630,19 +733,12 @@ def run_analysis_agent(
                 dimension=dimension_id,
             )
 
-        # Evidence is sufficient (or max retries hit) — assess this dimension.
         prompt = build_dimension_prompt(
             facts, relevant_chunks, dimension_id, refined_context
         )
-        # Wrap _call_llm with the reasoning decorator per-dimension so each LLM
-        # call is logged with the correct dimension tag.  A new wrapper is created
-        # on each iteration; the decorator is a lightweight closure and the cost
-        # is negligible.  When no PrismLogger is active the wrapper is a no-op.
         _logged_llm = log_reasoning(agent="analysis", dimension=dimension_id)(_call_llm)
         response_text = _logged_llm(prompt, ANALYSIS_SYSTEM_PROMPT, llm_client)
         finding = parse_dimension_response(response_text, dimension_id)
-
-        # Write immediately; do not batch.
         _write_dimension(memory, dimension_id, finding)
 
     return CompletionSignal(agent="analysis", message="All six dimensions assessed.")

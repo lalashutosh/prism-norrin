@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import logging
 import sqlite3
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -56,6 +57,14 @@ class LogStore:
         self._db_path = db_path
         self._fallback_log_path = fallback_log_path
         self._conn: Optional[sqlite3.Connection] = None
+        # Serialises concurrent SQLite writes from multiple threads.
+        # The connection is opened with check_same_thread=False (cross-thread
+        # access is permitted) but Python's sqlite3 module is not safe for
+        # *simultaneous* writes from different threads on the same connection.
+        # The lock costs nothing when the pipeline is single-threaded and
+        # prevents "database is locked" / data corruption when the analysis
+        # agent fans out 6 LLM calls in a ThreadPoolExecutor.
+        self._write_lock = threading.Lock()
 
     # ── Setup / teardown ──────────────────────────────────────────────────────
 
@@ -199,78 +208,81 @@ class LogStore:
 
     def write_pipeline_event(self, entry: PipelineEvent) -> None:
         """Insert one pipeline lifecycle event row."""
-        try:
-            self._conn.execute(
-                "INSERT INTO pipeline_events "
-                "(session_id, timestamp, event_type, agent, metadata, duration_ms) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                (
-                    entry.session_id,
-                    entry.timestamp,
-                    entry.event_type,
-                    entry.agent,
-                    json.dumps(entry.metadata),
-                    entry.duration_ms,
-                ),
-            )
-            self._conn.commit()
-        except Exception as exc:
-            self._fallback("write_pipeline_event", exc)
+        with self._write_lock:
+            try:
+                self._conn.execute(
+                    "INSERT INTO pipeline_events "
+                    "(session_id, timestamp, event_type, agent, metadata, duration_ms) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        entry.session_id,
+                        entry.timestamp,
+                        entry.event_type,
+                        entry.agent,
+                        json.dumps(entry.metadata),
+                        entry.duration_ms,
+                    ),
+                )
+                self._conn.commit()
+            except Exception as exc:
+                self._fallback("write_pipeline_event", exc)
 
     def write_reasoning_entry(self, entry: ReasoningEntry) -> None:
         """Insert one reasoning trace row."""
-        try:
-            self._conn.execute(
-                "INSERT INTO reasoning_entries "
-                "(session_id, timestamp, agent, dimension, prompt_sent, llm_response, "
-                "parsed_output, parse_succeeded, confidence, claims_count, "
-                "weak_claims_count, chunk_ids_used, duration_ms) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    entry.session_id,
-                    entry.timestamp,
-                    entry.agent,
-                    entry.dimension,
-                    entry.prompt_sent,
-                    entry.llm_response,
-                    # parsed_output is None when parse failed; store as SQL NULL.
-                    json.dumps(entry.parsed_output) if entry.parsed_output is not None else None,
-                    int(entry.parse_succeeded),         # SQLite stores bool as 0/1
-                    entry.confidence,
-                    entry.claims_count,
-                    entry.weak_claims_count,
-                    json.dumps(entry.chunk_ids_used),   # always a list, even if empty
-                    entry.duration_ms,
-                ),
-            )
-            self._conn.commit()
-        except Exception as exc:
-            self._fallback("write_reasoning_entry", exc)
+        with self._write_lock:
+            try:
+                self._conn.execute(
+                    "INSERT INTO reasoning_entries "
+                    "(session_id, timestamp, agent, dimension, prompt_sent, llm_response, "
+                    "parsed_output, parse_succeeded, confidence, claims_count, "
+                    "weak_claims_count, chunk_ids_used, duration_ms) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        entry.session_id,
+                        entry.timestamp,
+                        entry.agent,
+                        entry.dimension,
+                        entry.prompt_sent,
+                        entry.llm_response,
+                        # parsed_output is None when parse failed; store as SQL NULL.
+                        json.dumps(entry.parsed_output) if entry.parsed_output is not None else None,
+                        int(entry.parse_succeeded),         # SQLite stores bool as 0/1
+                        entry.confidence,
+                        entry.claims_count,
+                        entry.weak_claims_count,
+                        json.dumps(entry.chunk_ids_used),   # always a list, even if empty
+                        entry.duration_ms,
+                    ),
+                )
+                self._conn.commit()
+            except Exception as exc:
+                self._fallback("write_reasoning_entry", exc)
 
     def write_state_change(self, entry: StateChangeEntry) -> None:
         """Insert one state-change row (written on both success and failure)."""
-        try:
-            self._conn.execute(
-                "INSERT INTO state_changes "
-                "(session_id, timestamp, section, agent, previous_state, new_state, "
-                "write_validated, validation_errors) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    entry.session_id,
-                    entry.timestamp,
-                    entry.section,
-                    entry.agent,
-                    # previous_state is None on first write to a section.
-                    json.dumps(entry.previous_state) if entry.previous_state is not None else None,
-                    json.dumps(entry.new_state),
-                    int(entry.write_validated),
-                    # Store empty list as NULL to save space; read back as [].
-                    json.dumps(entry.validation_errors) if entry.validation_errors else None,
-                ),
-            )
-            self._conn.commit()
-        except Exception as exc:
-            self._fallback("write_state_change", exc)
+        with self._write_lock:
+            try:
+                self._conn.execute(
+                    "INSERT INTO state_changes "
+                    "(session_id, timestamp, section, agent, previous_state, new_state, "
+                    "write_validated, validation_errors) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        entry.session_id,
+                        entry.timestamp,
+                        entry.section,
+                        entry.agent,
+                        # previous_state is None on first write to a section.
+                        json.dumps(entry.previous_state) if entry.previous_state is not None else None,
+                        json.dumps(entry.new_state),
+                        int(entry.write_validated),
+                        # Store empty list as NULL to save space; read back as [].
+                        json.dumps(entry.validation_errors) if entry.validation_errors else None,
+                    ),
+                )
+                self._conn.commit()
+            except Exception as exc:
+                self._fallback("write_state_change", exc)
 
     def write_signal(self, entry: SignalEntry) -> Optional[int]:
         """Insert one signal row and return the auto-increment row ID.
@@ -279,40 +291,42 @@ class LogStore:
         later to close the signal's lifecycle with a resolved_at timestamp.
         Returns None if the write fails (error goes to fallback log).
         """
-        try:
-            cursor = self._conn.execute(
-                "INSERT INTO signals "
-                "(session_id, timestamp, signal_type, agent, dimension, payload, "
-                "resolution, retry_count, resolved_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (
-                    entry.session_id,
-                    entry.timestamp,
-                    entry.signal_type,
-                    entry.agent,
-                    entry.dimension,
-                    json.dumps(entry.payload),
-                    entry.resolution,
-                    entry.retry_count,
-                    entry.resolved_at,   # None until resolve_signal() is called
-                ),
-            )
-            self._conn.commit()
-            return cursor.lastrowid
-        except Exception as exc:
-            self._fallback("write_signal", exc)
-            return None
+        with self._write_lock:
+            try:
+                cursor = self._conn.execute(
+                    "INSERT INTO signals "
+                    "(session_id, timestamp, signal_type, agent, dimension, payload, "
+                    "resolution, retry_count, resolved_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        entry.session_id,
+                        entry.timestamp,
+                        entry.signal_type,
+                        entry.agent,
+                        entry.dimension,
+                        json.dumps(entry.payload),
+                        entry.resolution,
+                        entry.retry_count,
+                        entry.resolved_at,   # None until resolve_signal() is called
+                    ),
+                )
+                self._conn.commit()
+                return cursor.lastrowid
+            except Exception as exc:
+                self._fallback("write_signal", exc)
+                return None
 
     def resolve_signal(self, signal_id: int, resolved_at: str) -> None:
         """Set the resolved_at timestamp on a previously written signal row."""
-        try:
-            self._conn.execute(
-                "UPDATE signals SET resolved_at = ? WHERE id = ?",
-                (resolved_at, signal_id),
-            )
-            self._conn.commit()
-        except Exception as exc:
-            self._fallback(f"resolve_signal(id={signal_id})", exc)
+        with self._write_lock:
+            try:
+                self._conn.execute(
+                    "UPDATE signals SET resolved_at = ? WHERE id = ?",
+                    (resolved_at, signal_id),
+                )
+                self._conn.commit()
+            except Exception as exc:
+                self._fallback(f"resolve_signal(id={signal_id})", exc)
 
     # ── Read methods ──────────────────────────────────────────────────────────
     # All read methods return list[dict] (raw row dicts).  Conversion to typed
