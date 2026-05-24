@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import UploadZone from '@/components/UploadZone'
 import PipelineStatus from '@/components/PipelineStatus'
 import ReportView from '@/components/ReportView'
@@ -9,6 +9,7 @@ import Spinner from '@/components/Spinner'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface ReportData {
+  // Sections 1–9
   use_case_summary:              string
   extracted_facts:               Record<string, unknown>
   ai_definition_check:           Record<string, unknown>
@@ -18,12 +19,19 @@ export interface ReportData {
   roles:                         Record<string, unknown>
   governance_observations:       Record<string, unknown>
   missing_information:           Record<string, unknown>
+  // Section 10: per-dimension + overall confidence with narrative
+  confidence_score:              Record<string, unknown>
+  // Section 11: claims grouped by epistemological label (programmatic)
+  evidence_separation:           Record<string, unknown[]>
+  // Section 12: pipeline stage trace (programmatic)
+  agent_trace:                   Array<Record<string, unknown>>
+  // Internal
   citations_by_source:           Record<string, unknown>
 }
 
 export interface JobStatus {
   job_id:   string
-  status:   'pending' | 'extracting' | 'analysing' | 'done' | 'error'
+  status:   'pending' | 'extracting' | 'analysing' | 'waiting_llm' | 'done' | 'error'
   stage:    string
   progress: number
   result:   ReportData | null
@@ -38,22 +46,31 @@ export default function Home() {
   const [phase,     setPhase]     = useState<Phase>('idle')
   const [jobStatus, setJobStatus] = useState<JobStatus | null>(null)
   const [errorMsg,  setErrorMsg]  = useState('')
+  const [llmDown,   setLlmDown]   = useState(false)
   const pollRef                   = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const stopPolling = () => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
   }
 
-  const handleUpload = useCallback(async (file: File) => {
+  // ── Core submit logic (shared by file and text paths) ─────────────────────
+  const startJob = useCallback(async (body: FormData | { text: string; title: string }) => {
     setPhase('uploading')
     setErrorMsg('')
+    setLlmDown(false)
     stopPolling()
 
     try {
-      const form = new FormData()
-      form.append('file', file)
-
-      const res = await fetch('/api/analyze', { method: 'POST', body: form })
+      let res: Response
+      if (body instanceof FormData) {
+        res = await fetch('/api/analyze', { method: 'POST', body })
+      } else {
+        res = await fetch('/api/analyze/text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+      }
       if (!res.ok) throw new Error(`${res.status}: ${await res.text()}`)
 
       const { job_id } = await res.json() as { job_id: string }
@@ -65,6 +82,7 @@ export default function Home() {
           if (!sr.ok) return
           const job = await sr.json() as JobStatus
           setJobStatus(job)
+          setLlmDown(job.status === 'waiting_llm')
           if (job.status === 'done' && job.result) {
             stopPolling(); setPhase('done')
           } else if (job.status === 'error') {
@@ -78,8 +96,18 @@ export default function Home() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const handleUpload = useCallback((file: File) => {
+    const form = new FormData()
+    form.append('file', file)
+    startJob(form)
+  }, [startJob])
+
+  const handleText = useCallback((text: string, title: string) => {
+    startJob({ text, title })
+  }, [startJob])
+
   const handleReset = () => {
-    stopPolling(); setPhase('idle'); setJobStatus(null); setErrorMsg('')
+    stopPolling(); setPhase('idle'); setJobStatus(null); setErrorMsg(''); setLlmDown(false)
   }
 
   return (
@@ -93,9 +121,21 @@ export default function Home() {
         <span className="label">EU AI Act Compliance Engine</span>
       </header>
 
+      {/* LLM disconnect banner */}
+      {llmDown && (
+        <div className="bg-yellow-500/10 border-b border-yellow-500/20 px-6 py-2 flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-yellow-400 animate-pulse shrink-0" />
+          <span className="text-xs text-yellow-300">
+            LLM unavailable — pipeline is waiting for the model to reconnect. Analysis will resume automatically.
+          </span>
+        </div>
+      )}
+
       {/* Main */}
       <main className="flex-1 px-4 py-16">
-        {phase === 'idle' && <IdleView onUpload={handleUpload} />}
+        {phase === 'idle' && (
+          <IdleView onUpload={handleUpload} onSubmitText={handleText} />
+        )}
 
         {phase === 'uploading' && (
           <Center>
@@ -128,7 +168,13 @@ export default function Home() {
 
 // ── Idle view ─────────────────────────────────────────────────────────────────
 
-function IdleView({ onUpload }: { onUpload: (f: File) => void }) {
+function IdleView({
+  onUpload,
+  onSubmitText,
+}: {
+  onUpload: (f: File) => void
+  onSubmitText: (text: string, title: string) => void
+}) {
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-10">
@@ -136,19 +182,19 @@ function IdleView({ onUpload }: { onUpload: (f: File) => void }) {
           EU AI Act Compliance Analysis
         </h1>
         <p className="text-sm text-zinc-500 leading-relaxed max-w-lg">
-          Upload AI system documentation to receive a structured risk
-          assessment — risk classification, applicable articles,
-          obligations, and remediation steps.
+          Upload AI system documentation or paste a description to receive a
+          structured 12-section risk assessment — risk classification, applicable
+          articles, obligations, evidence separation, and a full agent trace.
         </p>
       </div>
 
-      <UploadZone onUpload={onUpload} />
+      <UploadZone onUpload={onUpload} onSubmitText={onSubmitText} />
 
       <div className="mt-8 grid grid-cols-3 gap-3">
         {[
-          { step: '01', title: 'Upload',    desc: 'Drop any PDF, DOCX, or TXT document' },
-          { step: '02', title: 'Analyse',   desc: 'Pipeline runs extraction, retrieval, and analysis' },
-          { step: '03', title: 'Report',    desc: 'Receive structured risk assessment' },
+          { step: '01', title: 'Submit',   desc: 'Upload a PDF/DOCX or paste text directly' },
+          { step: '02', title: 'Analyse',  desc: '5-agent pipeline: extract → retrieve → analyse → validate → synthesise' },
+          { step: '03', title: 'Report',   desc: '12-section structured compliance report with evidence trace' },
         ].map(({ step, title, desc }) => (
           <div key={step} className="card p-4">
             <span className="label block mb-2">{step}</span>

@@ -50,9 +50,55 @@ from __future__ import annotations
 
 import os
 import re
+import threading
+import time
 from typing import Any, Optional
 
 _THINK_RE = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
+
+# ── LLM availability tracking ─────────────────────────────────────────────────
+# Set when the last LLM call succeeded; cleared when a connection-level error
+# occurs.  Allows the API server and UI to surface "LLM unavailable" without
+# having to know about the underlying HTTP transport.
+
+_llm_connected = threading.Event()
+_llm_connected.set()   # optimistically available on startup
+
+# How long to wait between retries when the LLM is unreachable (seconds).
+_RETRY_INTERVAL_S: int = 5
+
+
+def is_llm_available() -> bool:
+    """Return True if the last LLM call succeeded (or no call has been made yet)."""
+    return _llm_connected.is_set()
+
+
+def _is_retriable(exc: Exception) -> bool:
+    """Return True when *exc* indicates a transient LLM unavailability.
+
+    Specifically matches connection-level errors (server down, network hiccup)
+    and server-side 5xx errors.  Authentication / bad-request errors are NOT
+    retriable and propagate immediately.
+    """
+    # openai-specific errors (most common path for OpenAI-compat endpoints)
+    try:
+        import openai  # noqa: PLC0415
+        if isinstance(exc, (openai.APIConnectionError, openai.APITimeoutError)):
+            return True
+        if isinstance(exc, openai.InternalServerError):
+            return True   # 500 = server overload / restart; usually recovers
+        # 429 rate-limit: retriable in principle, but not a detach scenario —
+        # leave it to propagate so the caller surfaces the limit clearly.
+    except ImportError:
+        pass
+
+    # Plain Python / httpx errors (propagate from some openai versions)
+    if isinstance(exc, (ConnectionRefusedError, ConnectionError, OSError)):
+        return True
+
+    # String-based fallback for any transport library
+    name = type(exc).__name__
+    return any(kw in name for kw in ("Connection", "Timeout", "Connect", "Network"))
 
 
 # ── Response shim ─────────────────────────────────────────────────────────────
@@ -126,25 +172,41 @@ class _MessagesNamespace:
                 "chat_template_kwargs": {"enable_thinking": False},
             }
 
-        response = self._client.chat.completions.create(
-            model=self._model,
-            max_tokens=max_tokens,
-            messages=oai_messages,
-            **kwargs,
-        )
-        msg  = response.choices[0].message
-        text = msg.content or ""
+        # Retry loop: on connection-level errors the pipeline thread waits until
+        # the LLM server comes back instead of failing immediately.  This lets
+        # the user detach and reattach the local LLM mid-run without losing work.
+        # Non-retriable errors (auth, bad request) propagate on the first raise.
+        while True:
+            try:
+                response = self._client.chat.completions.create(
+                    model=self._model,
+                    max_tokens=max_tokens,
+                    messages=oai_messages,
+                    **kwargs,
+                )
+            except Exception as exc:
+                if _is_retriable(exc):
+                    _llm_connected.clear()   # signal "unavailable" to status watchers
+                    time.sleep(_RETRY_INTERVAL_S)
+                    continue                  # retry indefinitely until LLM returns
+                raise                        # non-retriable: propagate immediately
 
-        # Fallback: some vLLM builds expose thinking tokens in reasoning_content
-        # while leaving content empty.  Use reasoning_content as last resort.
-        if not text.strip():
-            text = getattr(msg, "reasoning_content", None) or ""
+            # Successful response — mark LLM as available again.
+            _llm_connected.set()
 
-        # Strip residual <think>…</think> blocks (e.g. when disable_thinking
-        # is not supported by the server version).
-        text = _THINK_RE.sub("", text).strip()
+            msg  = response.choices[0].message
+            text = msg.content or ""
 
-        return _MessageResponse(text)
+            # Fallback: some vLLM builds expose thinking tokens in reasoning_content
+            # while leaving content empty.  Use reasoning_content as last resort.
+            if not text.strip():
+                text = getattr(msg, "reasoning_content", None) or ""
+
+            # Strip residual <think>…</think> blocks (e.g. when disable_thinking
+            # is not supported by the server version).
+            text = _THINK_RE.sub("", text).strip()
+
+            return _MessageResponse(text)
 
 
 # ── Public adapter ────────────────────────────────────────────────────────────
