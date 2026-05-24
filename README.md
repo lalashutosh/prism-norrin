@@ -29,6 +29,8 @@ Every query fans out across two independent indexes:
 
 Agents specify `source_types` in their `RetrievalSignal` to target one or both layers. Pre-computed document vectors mean only the query is embedded at retrieval time.
 
+**Retrieval KV cache** — every retrieval call is keyed by `SHA-256(query + sorted_filters)`. When validation or a retry loop re-issues a query that analysis already fetched, the result is returned from the in-session cache with no embedding call and no I/O. Cache hits are logged as `CACHE_HIT` events in the pipeline event stream.
+
 ---
 
 ## Memory: segmented read/write
